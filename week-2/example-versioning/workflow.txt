@@ -1,0 +1,477 @@
+# MLOps Week 2 Assignment Workflow
+
+## Student Information
+
+Name: Parveen Saroha
+
+Roll Number: 21f3001560
+
+---
+
+# Problem Statement
+
+Machine Learning projects consist of three important components:
+
+* Source Code
+* Dataset
+* Trained Models
+
+Git is excellent for versioning source code but is not suitable for handling large datasets and model artifacts because these files change frequently and significantly increase repository size.
+
+The objective of this assignment is to integrate **Data Version Control (DVC)** into an ML workflow so that datasets and trained models can be versioned efficiently while using **Google Cloud Storage (GCS)** as remote storage.
+
+This enables reproducible machine learning experiments where previous versions of datasets and models can be restored whenever required.
+
+---
+
+# Objective
+
+The main objectives of this assignment are:
+
+• Understand Data Version Control (DVC)
+
+• Integrate DVC with Git
+
+• Configure Google Cloud Storage as DVC Remote
+
+• Track datasets using DVC
+
+• Track trained models using DVC
+
+• Upload artifacts to Google Cloud Storage
+
+• Create multiple model versions
+
+• Restore previous versions using Git and DVC
+
+---
+
+# Overall Approach
+
+The implementation follows these steps:
+
+1. Create project environment
+
+2. Configure DVC
+
+3. Configure Google Cloud Storage as Remote
+
+4. Download Dataset
+
+5. Track Dataset
+
+6. Train Model
+
+7. Track Trained Model
+
+8. Upload Artifacts to Google Cloud Storage
+
+9. Commit using Git
+
+10. Create Git Tag (Version 1)
+
+11. Update Dataset
+
+12. Retrain Model
+
+13. Track Updated Model
+
+14. Upload Updated Artifacts
+
+15. Commit Changes
+
+16. Create Git Tag (Version 2)
+
+17. Restore Previous Versions
+
+---
+
+# Workflow Diagram
+
+```text
+Git Repository
+      │
+      ▼
+Source Code
+README
+Workflow
+Train Script
+      │
+      ▼
+DVC
+      │
+      ├────────► Dataset
+      │
+      ├────────► Model
+      │
+      ▼
+Google Cloud Storage
+(Remote Storage)
+      │
+      ▼
+Versioned ML Pipeline
+```
+
+---
+
+# Environment Setup
+
+Repository cloned:
+
+```bash
+git clone https://github.com/iterative/example-versioning.git
+```
+
+Project directory:
+
+```bash
+cd example-versioning
+```
+
+Virtual Environment:
+
+```bash
+python3 -m venv .env
+
+source .env/bin/activate
+```
+
+Install dependencies:
+
+```bash
+pip install -r requirements.txt
+
+pip install "dvc[gs]"
+```
+
+---
+
+# Configure Google Cloud Storage
+
+Google Cloud Storage bucket created:
+
+```text
+gs://week-2-mlops-21f3001560
+```
+
+Configure DVC Remote:
+
+```bash
+dvc remote add -d gcsremote gs://week-2-mlops-21f3001560
+```
+
+---
+
+# First Iteration
+
+Download dataset:
+
+```bash
+dvc get https://github.com/iterative/dataset-registry tutorials/versioning/data.zip
+
+unzip -q data.zip
+
+rm -f data.zip
+```
+
+Track Dataset:
+
+```bash
+dvc add data
+```
+
+Train Model:
+
+```bash
+python train.py
+```
+
+Track Model:
+
+```bash
+dvc add model.weights.h5
+```
+
+Upload Dataset & Model:
+
+```bash
+dvc push
+```
+
+Commit:
+
+```bash
+git add data.dvc model.weights.h5.dvc metrics.csv .gitignore
+
+git commit -m "First iteration with 1000 images"
+```
+
+Create Version:
+
+```bash
+git tag -a v1.0 -m "Model version 1.0"
+```
+
+---
+
+# Verify First Version
+
+Delete Local Cache:
+
+```bash
+rm -rf .dvc/cache
+```
+
+Restore from Remote:
+
+```bash
+dvc pull
+
+dvc checkout
+```
+
+Successful verification confirms that Version 1 is safely stored inside Google Cloud Storage.
+
+---
+
+# Second Iteration
+
+Download updated labels:
+
+```bash
+dvc get https://github.com/iterative/dataset-registry tutorials/versioning/new-labels.zip
+
+unzip -q new-labels.zip
+
+rm -f new-labels.zip
+```
+
+Update Dataset:
+
+```bash
+dvc add data
+```
+
+Retrain Model:
+
+```bash
+python train.py
+```
+
+Track Updated Model:
+
+```bash
+dvc add model.weights.h5
+```
+
+Upload New Artifacts:
+
+```bash
+dvc push
+```
+
+Commit:
+
+```bash
+git add data.dvc model.weights.h5.dvc metrics.csv
+
+git commit -m "Second iteration with 2000 images"
+```
+
+Create Version:
+
+```bash
+git tag -a v2.0 -m "Model version 2.0"
+```
+
+---
+
+# Verify Version 2
+
+Delete Cache:
+
+```bash
+rm -rf .dvc/cache
+```
+
+Restore Latest Version:
+
+```bash
+dvc pull
+
+dvc checkout
+```
+
+This verifies that the latest dataset and trained model are successfully restored from Google Cloud Storage.
+
+---
+
+# Switching Between Versions
+
+Restore Version 1
+
+```bash
+git checkout v1.0
+
+dvc pull
+
+dvc checkout
+```
+
+Restore Version 2
+
+```bash
+git checkout week_2
+
+dvc pull
+
+dvc checkout
+```
+
+This demonstrates reproducibility of machine learning experiments using Git and DVC.
+
+---
+
+# Git Commands Used
+
+```bash
+git clone
+
+git add
+
+git commit
+
+git tag
+
+git checkout
+
+git push
+```
+
+---
+
+# DVC Commands Used
+
+```bash
+dvc remote add
+
+dvc get
+
+dvc add
+
+dvc push
+
+dvc pull
+
+dvc checkout
+```
+
+---
+
+# Google Cloud Commands Used
+
+```bash
+gsutil ls
+
+gsutil mb
+
+gcloud auth list
+
+gcloud config get-value project
+```
+
+---
+
+# Files Versioned by DVC
+
+Dataset
+
+```
+data/
+```
+
+Model
+
+```
+model.weights.h5
+```
+
+Tracked in Git
+
+```
+data.dvc
+
+model.weights.h5.dvc
+```
+
+---
+
+# Files Versioned by Git
+
+README.md
+
+workflow.txt
+
+train.py
+
+requirements.txt
+
+metrics.csv
+
+.gitignore
+
+.dvc/config
+
+---
+
+# Why Git + DVC?
+
+Git tracks
+
+* Source Code
+* Documentation
+* DVC Metadata
+
+DVC tracks
+
+* Large Datasets
+* Trained Models
+
+Google Cloud Storage stores
+
+* Actual Dataset Files
+* Actual Model Files
+
+This keeps Git repositories lightweight while maintaining complete experiment reproducibility.
+
+---
+
+# Learning Outcomes
+
+Through this assignment, the following concepts were learned:
+
+• Data Version Control
+
+• Git and DVC Integration
+
+• Google Cloud Storage as DVC Remote
+
+• Dataset Versioning
+
+• Model Versioning
+
+• Experiment Tracking
+
+• Git Tags
+
+• Cloud-based Artifact Storage
+
+• Reproducible Machine Learning Pipelines
+
+---
+
+# Conclusion
+
+This assignment successfully integrates Git, DVC, and Google Cloud Storage into a Machine Learning workflow.
+
+Two independent versions of the dataset and trained model were created, uploaded to cloud storage, and restored successfully using Git and DVC. The workflow demonstrates how modern MLOps practices enable reproducible experiments, efficient version management, and cloud-based storage of machine learning artifacts.
