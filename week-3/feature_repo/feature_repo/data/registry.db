@@ -1,0 +1,35 @@
+
+C
+#
+__dummy"
+__dummy_idJfeature_repo
+”Ş¨Ò°Øï”Ş¨Ò°Øï
+D
+$
+	sample_id"	sample_idJfeature_repo
+”Ş¨ÒÀ‚ü”Ş¨ÒÀ‚ü1"$8d2cf7f0-98b7-4689-96ad-9d5bd6878661*£Ş¨ÒÀğ‚2ı
+È
+iris_featuresfeature_repo	sample_id"
+sepal length (cm)"
+sepal width (cm)"
+petal length (cm)"
+petal width (cm)2€†°–:¡event_timestampZdata/iris_features.parquetŠ1feast.infra.offline_stores.file_source.FileSource¢data/iris_features.parquet’”Ş¨ÒˆÍĞé"”Ş¨Ò ÏØ@b
+	sample_id’latest0
+”Ş¨ÒÀŞ‡‚£Ş¨ÒÀúÑ‚
+€È¬€‹Ò»0R¸
+µ
+,feast.infra.online_stores.sqlite.SqliteTable"„
+f/home/jupyter/21f3001560_MLOPS_WEEKLY_ASSIGNMENT/week-3/feature_repo/feature_repo/data/online_store.dbfeature_repo_iris_featuresb°event_timestampZdata/iris_features.parquetŠ1feast.infra.offline_stores.file_source.FileSource¢data/iris_features.parquetªfeature_repo’”Ş¨ÒˆÍĞé"”Ş¨Ò ÏØŠ.
+
+feature_repo
+”Ş¨ÒÈ¯¿ë”Ş¨ÒÈ¯¿ë’Î
+Ë
+iris_featuresfeature_repo"feature_view*é
+È
+iris_featuresfeature_repo	sample_id"
+sepal length (cm)"
+sepal width (cm)"
+petal length (cm)"
+petal width (cm)2€†°–:¡event_timestampZdata/iris_features.parquetŠ1feast.infra.offline_stores.file_source.FileSource¢data/iris_features.parquet’”Ş¨ÒˆÍĞé"”Ş¨Ò ÏØ@b
+	sample_id’latest
+”Ş¨ÒÀŞ‡‚”Ş¨ÒÀŞ‡‚2”Ş¨Ò˜‚¸‚B$afaea8ac-920a-46cc-bcae-6a205e925159
