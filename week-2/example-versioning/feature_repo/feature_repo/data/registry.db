@@ -1,48 +1,0 @@
-
-C
-#
-__dummy"
-__dummy_idJfeature_repo
-¶¶¨Òàª¤Ê¶¶¨Òàª¤Ê
-D
-$
-	sample_id"	sample_idJfeature_repo
-¶¶¨ÒğË³Ê¶¶¨ÒğË³Ê1"$c9931a31-b278-4136-8205-a347955a67c7*ÓÆ¨Ò—ïæ2‘
-È
-iris_featuresfeature_repo	sample_id"
-sepal length (cm)"
-sepal width (cm)"
-petal length (cm)"
-petal width (cm)2€†°–:¡event_timestampZdata/iris_features.parquetŠ1feast.infra.offline_stores.file_source.FileSource¢data/iris_features.parquet’§Å¨ÒØ†Ê·"§Å¨ÒØ†Ê·@b
-	sample_id’latestD
-¶¶¨ÒĞ‹¾ÊÓÆ¨ÒÈ²Äæ
-€È¬€‹Ò»
-€È¬€‹Ò» 0RË
-È
-,feast.infra.online_stores.sqlite.SqliteTable"—
-y/home/jupyter/21f3001560_MLOPS_WEEKLY_ASSIGNMENT/week-2/example-versioning/feature_repo/feature_repo/data/online_store.dbfeature_repo_iris_featuresb¯event_timestampZdata/iris_features.parquetŠ1feast.infra.offline_stores.file_source.FileSource¢data/iris_features.parquetªfeature_repo’¶¶¨ÒÈÃ~"¶¶¨Ò°ªÖÉŠ-
-
-feature_repo
-¶¶¨Ò ßµ€–·¨Òàáª7’¾
-×
-iris_featuresfeature_repo"feature_view*õ
-Ô
-iris_featuresfeature_repo	sample_id"
-sepal length (cm)"
-sepal width (cm)"
-petal length (cm)"
-petal width (cm)"
-species2€†°–: event_timestampZdata/iris_features.parquetŠ1feast.infra.offline_stores.file_source.FileSource¢data/iris_features.parquet’¶¶¨ÒÈÃ~"¶¶¨Ò°ªÖÉ@b
-	sample_id’latest
-¶¶¨ÒĞ‹¾Ê¶¶¨ÒĞ‹¾Ê2¶¶¨Ò˜ğèÊB$791c5aff-2c4b-40f8-8dcf-e3067565522d
-á
-iris_featuresfeature_repo"feature_view*ı
-È
-iris_featuresfeature_repo	sample_id"
-sepal length (cm)"
-sepal width (cm)"
-petal length (cm)"
-petal width (cm)2€†°–:¡event_timestampZdata/iris_features.parquetŠ1feast.infra.offline_stores.file_source.FileSource¢data/iris_features.parquet’§Å¨ÒØ†Ê·"§Å¨ÒØ†Ê·@b
-	sample_id’latest0
-¶¶¨ÒĞ‹¾Ê§Å¨Òğ²ëÂ
-€È¬€‹Ò» 2§Å¨Ò¨„©ÄB$0f807d7f-fe43-439b-9a0c-30ea88b464d8

@@ -11,7 +11,9 @@ model = joblib.load("iris_model.pkl")
 # -----------------------------
 # Connect to Feast
 # -----------------------------
-store = FeatureStore(repo_path="feature_repo/feature_repo")
+store = FeatureStore(
+    repo_path="feature_repo/feature_repo"
+)
 
 # -----------------------------
 # Fetch features from Feast Online Store

@@ -6,7 +6,9 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 
 # Connect to Feast repository
-store = FeatureStore(repo_path="feature_repo/feature_repo")
+store = FeatureStore(
+    repo_path="feature_repo/feature_repo"
+)
 
 # Entity dataframe
 entity_df = pd.DataFrame({

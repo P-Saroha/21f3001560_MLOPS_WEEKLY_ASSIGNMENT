@@ -1,0 +1,512 @@
+=========================================================
+WEEK 3 WORKFLOW
+Integrating Feast Feature Store into the IRIS Pipeline
+=========================================================
+
+Student Name : Parveen Saroha
+Roll Number  : 21F3001560
+
+=========================================================
+
+Problem Statement
+-----------------
+
+In Week 2, DVC was used to version datasets and model artifacts.
+
+DVC helps answer the question:
+
+"Which version of the dataset was used for model training?"
+
+However, DVC alone does not solve another important production problem:
+
+"How can we ensure that the exact same feature engineering logic is used during both model training and model inference?"
+
+If training and serving use different feature transformations, the model may receive different inputs during inference, leading to **Training-Serving Skew**.
+
+To solve this problem, Feast Feature Store was integrated into the IRIS machine learning pipeline.
+
+Feast provides a centralized feature repository that allows both training and inference to retrieve the same features from a single source of truth.
+
+=========================================================
+
+Approach
+--------
+
+The assignment was completed in the following steps.
+
+=========================================================
+
+Step 1 : Created Week 3 Branch
+------------------------------
+
+Command
+
+git checkout -b week_3
+
+Purpose
+
+• Isolate Week 3 implementation from previous assignments.
+• Maintain separate version history.
+
+=========================================================
+
+Step 2 : Installed Feast
+------------------------
+
+Command
+
+pip install feast
+
+Purpose
+
+Install Feast Feature Store and its dependencies.
+
+=========================================================
+
+Step 3 : Initialized Feast Repository
+-------------------------------------
+
+Command
+
+feast init feature_repo
+
+Purpose
+
+This command creates the Feast repository containing
+
+• feature_store.yaml
+• Feature Registry
+• SQLite Online Store
+• Repository structure
+
+=========================================================
+
+Step 4 : Prepared IRIS Dataset
+------------------------------
+
+Created File
+
+prepare_feast_data.py
+
+Purpose
+
+• Load IRIS dataset
+• Generate unique sample_id
+• Add event_timestamp
+• Convert dataset into Parquet format
+
+Output File
+
+iris_features.parquet
+
+Command
+
+python prepare_feast_data.py
+
+=========================================================
+
+Step 5 : Defined Feast Objects
+------------------------------
+
+Created File
+
+feature_definitions.py
+
+Defined
+
+Entity
+
+sample_id
+
+Data Source
+
+iris_features.parquet
+
+Feature View
+
+• Sepal Length
+• Sepal Width
+• Petal Length
+• Petal Width
+
+Purpose
+
+Register all features that will be used by both training and inference.
+
+=========================================================
+
+Step 6 : Register Feature Definitions
+-------------------------------------
+
+Command
+
+feast apply
+
+Purpose
+
+Registers all Feast objects into the Feature Registry.
+
+This includes
+
+• Entity
+• Data Source
+• Feature View
+
+=========================================================
+
+Step 7 : Materialize Features
+-----------------------------
+
+Command
+
+feast materialize 2024-01-01T00:00:00 2025-01-01T00:00:00
+
+Purpose
+
+Copies feature values from the Offline Store into the SQLite Online Store.
+
+This makes features available for real-time inference.
+
+=========================================================
+
+Step 8 : Offline Feature Retrieval & Model Training
+---------------------------------------------------
+
+Created File
+
+train_feast.py
+
+Important Feast API
+
+store.get_historical_features()
+
+Purpose
+
+Retrieve historical features from the Offline Store and use them for model training.
+
+Machine Learning Algorithm
+
+RandomForestClassifier
+
+Training Accuracy
+
+1.0
+
+Command
+
+python train_feast.py
+
+Output
+
+Training Accuracy: 1.0
+
+Model saved as iris_model.pkl
+
+=========================================================
+
+Step 9 : Online Feature Retrieval & Prediction
+----------------------------------------------
+
+Created File
+
+predict_feast.py
+
+Important Feast API
+
+store.get_online_features()
+
+Purpose
+
+Retrieve features from the SQLite Online Store using sample_id and perform real-time prediction.
+
+Command
+
+python predict_feast.py
+
+Prediction
+
+Setosa
+
+=========================================================
+
+Step 10 : Verified Training-Serving Consistency
+-----------------------------------------------
+
+Compared
+
+Prediction using Feast Features
+
+with
+
+Prediction using Raw Dataset
+
+Output
+
+Prediction using Feast Features
+
+Setosa
+
+Prediction using Raw Data
+
+Setosa
+
+Predictions Match
+
+True
+
+This confirms that the same features are used during both training and inference, eliminating training-serving skew.
+
+=========================================================
+
+Project Files
+-------------
+
+New Files Created
+
+prepare_feast_data.py
+
+train_feast.py
+
+predict_feast.py
+
+feature_repo/
+
+feature_definitions.py
+
+iris_features.parquet
+
+iris_model.pkl
+
+README.md
+
+workflow.txt
+
+=========================================================
+
+Important Feast Commands
+------------------------
+
+Initialize Feature Repository
+
+feast init feature_repo
+
+---------------------------------------------------------
+
+Register Feature Definitions
+
+feast apply
+
+---------------------------------------------------------
+
+Materialize Features
+
+feast materialize 2024-01-01T00:00:00 2025-01-01T00:00:00
+
+---------------------------------------------------------
+
+Prepare Dataset
+
+python prepare_feast_data.py
+
+---------------------------------------------------------
+
+Train Model
+
+python train_feast.py
+
+---------------------------------------------------------
+
+Run Prediction
+
+python predict_feast.py
+
+=========================================================
+
+Live Demonstration Flow
+-----------------------
+
+1.
+
+Show the project repository structure.
+
+Explain the files created for Week 3.
+
+---------------------------------------------------------
+
+2.
+
+Open feature_store.yaml
+
+Explain
+
+• Project Name
+• Registry
+• SQLite Backend
+• Online Store
+
+---------------------------------------------------------
+
+3.
+
+Open feature_definitions.py
+
+Explain
+
+• Entity (sample_id)
+
+• Data Source
+
+• Feature View
+
+---------------------------------------------------------
+
+4.
+
+Open prepare_feast_data.py
+
+Explain
+
+• Loading IRIS dataset
+
+• Creating sample_id
+
+• Adding event_timestamp
+
+• Saving Parquet file
+
+---------------------------------------------------------
+
+5.
+
+Run
+
+feast apply
+
+Explain that Feast registers feature definitions inside the Feature Registry.
+
+---------------------------------------------------------
+
+6.
+
+Run
+
+feast materialize
+
+Explain that feature values are copied into the SQLite Online Store.
+
+---------------------------------------------------------
+
+7.
+
+Run
+
+python train_feast.py
+
+Explain
+
+• Offline Store
+
+• Historical Feature Retrieval
+
+• Random Forest Training
+
+• Training Accuracy = 1.0
+
+---------------------------------------------------------
+
+8.
+
+Run
+
+python predict_feast.py
+
+Explain
+
+• Online Store
+
+• Real-time Feature Retrieval
+
+• Prediction using Feast
+
+---------------------------------------------------------
+
+9.
+
+Show
+
+Prediction using Feast Features
+
+Prediction using Raw Data
+
+Predictions Match = True
+
+Explain that both predictions are identical because Feast provides the same features during training and inference.
+
+---------------------------------------------------------
+
+10.
+
+Conclusion
+
+Feast successfully eliminates training-serving skew by ensuring both model training and inference use a single, consistent source of engineered features.
+
+=========================================================
+
+Learning Outcomes
+-----------------
+
+• Understood the importance of Feature Stores in production ML pipelines.
+
+• Learned the difference between Offline Store and Online Store.
+
+• Implemented a Feast Feature Repository.
+
+• Defined Entity, Data Source and Feature View.
+
+• Registered feature definitions using Feast.
+
+• Materialized features into the Online Store.
+
+• Retrieved historical features for training.
+
+• Retrieved online features for inference.
+
+• Trained a Random Forest model using Feast.
+
+• Verified prediction consistency between Feast features and raw dataset.
+
+=========================================================
+
+Assignment Status
+-----------------
+
+Task 1 : Initialize Feast Repository              ✓ Completed
+
+Task 2 : Entity, Data Source & Feature View       ✓ Completed
+
+Task 3 : Apply & Materialize Features             ✓ Completed
+
+Task 4 : Offline Feature Retrieval & Training     ✓ Completed
+
+Task 5 : Online Feature Retrieval & Inference     ✓ Completed
+
+Task 6 : BigQuery Backend (Optional)              Not Implemented
+
+=========================================================
+
+Final Result
+------------
+
+✔ Feast Feature Repository successfully integrated.
+
+✔ Offline feature retrieval implemented.
+
+✔ Online feature retrieval implemented.
+
+✔ Random Forest model trained successfully.
+
+✔ Prediction consistency verified.
+
+✔ Training-serving skew eliminated.
+
+=========================================================
