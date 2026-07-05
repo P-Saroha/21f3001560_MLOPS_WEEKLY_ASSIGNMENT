@@ -2,63 +2,104 @@ import pandas as pd
 import joblib
 
 from feast import FeatureStore
+
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import accuracy_score
 
-# Connect to Feast repository
+
+# ==========================================================
+# Connect to Feast Repository
+# ==========================================================
+
 store = FeatureStore(
     repo_path="feature_repo/feature_repo"
 )
 
-# Entity dataframe
-entity_df = pd.DataFrame({
-    "sample_id": range(150),
-    "event_timestamp": pd.Timestamp("2024-01-01"),
-})
+# ==========================================================
+# Read Original Dataset
+# ==========================================================
 
-# Fetch historical features
+raw_df = pd.read_csv(
+    "feature_repo/feature_repo/data/iris_data_adapted_for_feast.csv"
+)
+
+# Convert timestamp column
+raw_df["event_timestamp"] = pd.to_datetime(raw_df["event_timestamp"])
+
+# ==========================================================
+# Entity DataFrame
+# ==========================================================
+
+entity_df = raw_df[["iris_id", "event_timestamp"]]
+
+# ==========================================================
+# Retrieve Historical Features from Feast
+# ==========================================================
+
 training_df = store.get_historical_features(
     entity_df=entity_df,
     features=[
-        "iris_features:sepal length (cm)",
-        "iris_features:sepal width (cm)",
-        "iris_features:petal length (cm)",
-        "iris_features:petal width (cm)",
+        "iris_features:sepal_length",
+        "iris_features:sepal_width",
+        "iris_features:petal_length",
+        "iris_features:petal_width",
+        "iris_features:species",
     ],
 ).to_df()
 
+print("\nHistorical Features Retrieved From Feast\n")
 print(training_df.head())
 
-# Features
+# ==========================================================
+# Encode Target Labels
+# ==========================================================
+
+label_encoder = LabelEncoder()
+
+training_df["species"] = label_encoder.fit_transform(
+    training_df["species"]
+)
+
+# Save Label Encoder
+joblib.dump(label_encoder, "label_encoder.pkl")
+
+# ==========================================================
+# Prepare Training Data
+# ==========================================================
+
 X = training_df[
     [
-        "sepal length (cm)",
-        "sepal width (cm)",
-        "petal length (cm)",
-        "petal width (cm)",
+        "sepal_length",
+        "sepal_width",
+        "petal_length",
+        "petal_width",
     ]
 ]
 
-# Target
-raw_df = pd.read_parquet(
-    "feature_repo/feature_repo/data/iris_features.parquet"
-)
+y = training_df["species"]
 
-y = raw_df["species"]
+# ==========================================================
+# Train Model
+# ==========================================================
 
-# Train model
 model = RandomForestClassifier(
-    n_estimators=100,
     random_state=42
 )
 
 model.fit(X, y)
 
-pred = model.predict(X)
+predictions = model.predict(X)
 
-print("Training Accuracy:", accuracy_score(y, pred))
+accuracy = accuracy_score(y, predictions)
 
-# Save model
+print("\nTraining Accuracy:", accuracy)
+
+# ==========================================================
+# Save Model
+# ==========================================================
+
 joblib.dump(model, "iris_model.pkl")
 
-print("Model saved as iris_model.pkl")
+print("\nModel saved as iris_model.pkl")
+print("Label Encoder saved as label_encoder.pkl")

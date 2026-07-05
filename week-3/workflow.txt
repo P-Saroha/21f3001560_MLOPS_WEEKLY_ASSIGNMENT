@@ -34,11 +34,13 @@ However, DVC does not solve another important production problem:
 
 "How can we guarantee that exactly the same feature engineering logic is used during both model training and model inference?"
 
-If feature engineering is implemented separately for training and inference, it can introduce differences in the feature values seen by the model. This problem is known as Training-Serving Skew.
+If feature engineering is implemented separately for training and inference, the model may receive different feature values during prediction. This issue is known as Training-Serving Skew.
 
-To eliminate this issue, Feast Feature Store was integrated into the IRIS Machine Learning Pipeline.
+To eliminate this problem, Feast Feature Store was integrated into the IRIS Machine Learning Pipeline.
 
-Feast provides a centralized feature repository that allows both Offline Training and Online Inference to use the same feature definitions.
+Feast provides a centralized feature repository that ensures both Offline Training and Online Inference retrieve the same feature definitions from a single source of truth.
+
+For this assignment, the official IIT Madras Week 3 time-aware IRIS dataset was used.
 
 =========================================================
 
@@ -81,7 +83,7 @@ git checkout -b week_3
 
 Purpose
 
-Create a separate branch for Week 3 implementation without affecting previous assignments.
+Create a separate branch for the Week 3 assignment.
 
 =========================================================
 
@@ -94,7 +96,7 @@ pip install feast
 
 Purpose
 
-Install Feast Feature Store.
+Install Feast Feature Store and its dependencies.
 
 =========================================================
 
@@ -107,7 +109,7 @@ feast init feature_repo
 
 Purpose
 
-Creates the Feast Repository including
+Creates the Feast repository containing
 
 • feature_store.yaml
 
@@ -119,8 +121,8 @@ Creates the Feast Repository including
 
 =========================================================
 
-STEP 4 : Prepare Feast Dataset
-------------------------------
+STEP 4 : Prepare Dataset
+------------------------
 
 Created File
 
@@ -128,17 +130,41 @@ prepare_feast_data.py
 
 Purpose
 
-• Load IRIS Dataset
+• Validate the official IITM IRIS dataset
 
-• Create sample_id
+• Verify entity column
 
-• Add event_timestamp
+• Verify timestamp columns
 
-• Convert dataset into Parquet format
+• Verify dataset schema
 
-Output
+Dataset Used
 
-iris_features.parquet
+iris_data_adapted_for_feast.csv
+
+The dataset contains
+
+• iris_id
+
+• event_timestamp
+
+• created_timestamp
+
+• sepal_length
+
+• sepal_width
+
+• petal_length
+
+• petal_width
+
+• species
+
+The CSV dataset was converted into Parquet format because Feast uses Parquet for file-based feature sources.
+
+Output Dataset
+
+iris_data_adapted_for_feast.parquet
 
 Command
 
@@ -157,32 +183,32 @@ Defined
 
 Entity
 
-sample_id
+iris_id
 
 Data Source
 
-iris_features.parquet
+iris_data_adapted_for_feast.parquet
 
 Feature View
 
-• Sepal Length
+• sepal_length
 
-• Sepal Width
+• sepal_width
 
-• Petal Length
+• petal_length
 
-• Petal Width
+• petal_width
 
 Purpose
 
-Create reusable feature definitions for both training and inference.
+Define reusable feature definitions that will be shared between Offline Training and Online Inference.
 
 =========================================================
 
 STEP 6 : Register Feature Definitions
 -------------------------------------
 
-Command
+Commands
 
 cd feature_repo/feature_repo
 
@@ -198,7 +224,7 @@ Registers
 
 • Feature View
 
-inside Feast Registry.
+inside the Feast Registry.
 
 =========================================================
 
@@ -207,13 +233,13 @@ STEP 7 : Materialize Features
 
 Command
 
-feast materialize 2024-01-01T00:00:00 2025-01-01T00:00:00
+feast materialize-incremental $(date -u +"%Y-%m-%dT%H:%M:%S")
 
 Purpose
 
 Copies feature values from the Offline Store into the SQLite Online Store.
 
-These features are now available for online inference.
+These features are now available for real-time inference.
 
 =========================================================
 
@@ -230,15 +256,25 @@ store.get_historical_features()
 
 Purpose
 
-Retrieve historical features from Feast Offline Store.
+Retrieve historical features from the Feast Offline Store.
 
 Machine Learning Algorithm
 
 RandomForestClassifier
 
+Label Processing
+
+LabelEncoder
+
 Training Accuracy
 
 1.0
+
+Generated Files
+
+iris_model.pkl
+
+label_encoder.pkl
 
 Command
 
@@ -248,11 +284,13 @@ python train_feast.py
 
 Output
 
+Historical Features Retrieved From Feast
+
 Training Accuracy : 1.0
 
-Model saved as
+Model saved as iris_model.pkl
 
-iris_model.pkl
+Label Encoder saved as label_encoder.pkl
 
 =========================================================
 
@@ -269,15 +307,25 @@ store.get_online_features()
 
 Purpose
 
-Retrieve features from Feast Online Store and perform prediction.
+Retrieve features from the Feast Online Store using iris_id and perform prediction.
 
 Command
 
 python predict_feast.py
 
-Prediction
+Output
 
-Setosa
+Prediction using Feast Features
+
+versicolor
+
+Actual Species from Dataset
+
+versicolor
+
+Prediction Match
+
+True
 
 =========================================================
 
@@ -288,27 +336,27 @@ Compared
 
 Prediction using Feast Features
 
-vs
+with
 
-Prediction using Raw Dataset
+Actual Species from Dataset
 
 Output
 
 Prediction using Feast Features
 
-Setosa
+versicolor
 
-Prediction using Raw Data
+Actual Species from Dataset
 
-Setosa
+versicolor
 
-Predictions Match
+Prediction Match
 
 True
 
 Conclusion
 
-The same feature values are used during training and inference.
+The same feature definitions are used during Offline Training and Online Inference.
 
 Therefore,
 
@@ -333,6 +381,8 @@ Project Structure
 
     ├── workflow.txt
 
+    ├── requirements.txt
+
     ├── prepare_feast_data.py
 
     ├── train_feast.py
@@ -341,7 +391,7 @@ Project Structure
 
     ├── iris_model.pkl
 
-    ├── requirements.txt
+    ├── label_encoder.pkl
 
     │
 
@@ -357,7 +407,9 @@ Project Structure
 
         │   ├── data/
 
-        │   │   ├── iris_features.parquet
+        │   │   ├── iris_data_adapted_for_feast.csv
+
+        │   │   ├── iris_data_adapted_for_feast.parquet
 
         │   │   ├── registry.db
 
@@ -376,7 +428,7 @@ cd week-3
 
 ---------------------------------------------------------
 
-Prepare Dataset
+Validate Dataset
 
 python prepare_feast_data.py
 
@@ -396,7 +448,7 @@ feast apply
 
 Materialize Features
 
-feast materialize 2024-01-01T00:00:00 2025-01-01T00:00:00
+feast materialize-incremental $(date -u +"%Y-%m-%dT%H:%M:%S")
 
 ---------------------------------------------------------
 
@@ -423,29 +475,23 @@ Live Demonstration Flow
 
 1.
 
-Open GitHub repository.
+Open the GitHub repository.
 
-Show
-
-week_3 branch.
+Switch to the week_3 branch.
 
 =========================================================
 
 2.
 
-Open
+Open the week-3 folder.
 
-week-3 folder.
-
-Explain project structure.
+Explain the project structure.
 
 =========================================================
 
 3.
 
-Open
-
-feature_store.yaml
+Open feature_store.yaml.
 
 Explain
 
@@ -459,15 +505,13 @@ Explain
 
 4.
 
-Open
-
-feature_definitions.py
+Open feature_definitions.py.
 
 Explain
 
-• Entity
+• Entity (iris_id)
 
-• Data Source
+• File Data Source
 
 • Feature View
 
@@ -475,19 +519,19 @@ Explain
 
 5.
 
-Open
-
-prepare_feast_data.py
+Open prepare_feast_data.py.
 
 Explain
 
-• Loading IRIS dataset
+• Validation of the IITM dataset
 
-• Creating sample_id
+• Entity (iris_id)
 
-• Adding event_timestamp
+• Timestamp columns
 
-• Saving Parquet dataset
+• Dataset schema
+
+• CSV to Parquet conversion for Feast compatibility
 
 =========================================================
 
@@ -496,6 +540,8 @@ Explain
 Run
 
 python prepare_feast_data.py
+
+Explain that the dataset is verified before being registered with Feast.
 
 =========================================================
 
@@ -509,9 +555,7 @@ Run
 
 feast apply
 
-Explain
-
-Feature definitions are registered into Feast Registry.
+Explain that Feast registers the Entity, Data Source and Feature View inside the Feature Registry.
 
 =========================================================
 
@@ -519,17 +563,15 @@ Feature definitions are registered into Feast Registry.
 
 Run
 
-feast materialize
+feast materialize-incremental
 
-Explain
-
-Offline features are copied into SQLite Online Store.
+Explain that historical features are copied from the Offline Store into the SQLite Online Store.
 
 =========================================================
 
 9.
 
-Return to Week 3 folder.
+Return to the Week 3 folder.
 
 Run
 
@@ -542,6 +584,8 @@ Explain
 • Offline Store
 
 • Random Forest Training
+
+• Label Encoding
 
 • Accuracy = 1.0
 
@@ -559,7 +603,7 @@ Explain
 
 • SQLite Online Store
 
-• Prediction
+• Real-time Prediction
 
 =========================================================
 
@@ -567,15 +611,15 @@ Explain
 
 Show
 
+Retrieved Features From Feast
+
 Prediction using Feast Features
 
-Prediction using Raw Data
+Actual Species from Dataset
 
-Predictions Match = True
+Prediction Match = True
 
-Explain
-
-Both predictions are identical because Feast provides the same features during both training and inference.
+Explain that the same feature definitions are used during both training and inference.
 
 =========================================================
 
@@ -588,7 +632,7 @@ Learning Outcomes
 
 ✓ Learned Online Store
 
-✓ Created Feast Repository
+✓ Created a Feast Repository
 
 ✓ Defined Entity
 
@@ -604,7 +648,9 @@ Learning Outcomes
 
 ✓ Retrieved Online Features
 
-✓ Trained Random Forest Model
+✓ Trained a Random Forest Model
+
+✓ Used LabelEncoder for categorical labels
 
 ✓ Verified Prediction Consistency
 
@@ -615,17 +661,17 @@ Learning Outcomes
 Assignment Status
 -----------------
 
-Task 1 : Initialize Feast Repository             ✓ Completed
+Task 1 : Initialize Feast Repository                     ✓ Completed
 
-Task 2 : Define Entity, Data Source & Feature View   ✓ Completed
+Task 2 : Define Entity, Data Source & Feature View       ✓ Completed
 
-Task 3 : Apply & Materialize Features            ✓ Completed
+Task 3 : Apply & Materialize Features                    ✓ Completed
 
-Task 4 : Offline Feature Retrieval               ✓ Completed
+Task 4 : Offline Feature Retrieval & Training            ✓ Completed
 
-Task 5 : Online Feature Retrieval                ✓ Completed
+Task 5 : Online Feature Retrieval & Inference            ✓ Completed
 
-Task 6 : BigQuery Backend (Optional)             Not Implemented
+Task 6 : BigQuery Backend (Optional)                     Not Implemented
 
 =========================================================
 
@@ -633,6 +679,8 @@ Final Result
 ------------
 
 ✓ Feast Feature Store successfully integrated into the IRIS Pipeline.
+
+✓ Official IIT Madras Week 3 time-aware IRIS dataset successfully used.
 
 ✓ Offline Feature Retrieval implemented.
 

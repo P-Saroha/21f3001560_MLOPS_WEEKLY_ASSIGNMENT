@@ -1,30 +1,58 @@
-from sklearn.datasets import load_iris
 import pandas as pd
-
-# Load iris dataset
-iris = load_iris(as_frame=True)
-
-# Create dataframe
-df = iris.frame.copy()
-
-# Rename target column
-df.rename(columns={"target": "species"}, inplace=True)
-
-# Add unique ID
-df["sample_id"] = range(len(df))
-
-# Feast requires timestamp
-df["event_timestamp"] = pd.Timestamp("2024-01-01")
-
-# Create output directory if it doesn't exist
 import os
-os.makedirs("feature_repo/feature_repo/data", exist_ok=True)
 
-# Save parquet
-output_path = "feature_repo/feature_repo/data/iris_features.parquet"
+# ==========================================================
+# IITM Feast Dataset Path
+# ==========================================================
 
-df.to_parquet(output_path, index=False)
+DATA_PATH = "feature_repo/feature_repo/data/iris_data_adapted_for_feast.csv"
 
+# ==========================================================
+# Verify Dataset Exists
+# ==========================================================
+
+if not os.path.exists(DATA_PATH):
+    raise FileNotFoundError(
+        f"Dataset not found:\n{DATA_PATH}"
+    )
+
+# ==========================================================
+# Load Dataset
+# ==========================================================
+
+df = pd.read_csv(DATA_PATH)
+
+# ==========================================================
+# Convert Timestamp Columns
+# ==========================================================
+
+df["event_timestamp"] = pd.to_datetime(df["event_timestamp"])
+df["created_timestamp"] = pd.to_datetime(df["created_timestamp"])
+
+# ==========================================================
+# Display Dataset Information
+# ==========================================================
+
+print("\n==============================")
+print("IITM Feast Dataset Loaded")
+print("==============================\n")
+
+print("Dataset Shape:")
+print(df.shape)
+
+print("\nColumns:")
+print(df.columns.tolist())
+
+print("\nFirst Five Rows:")
 print(df.head())
-print()
-print("Saved to:", output_path)
+
+print("\nData Types:")
+print(df.dtypes)
+
+print("\nUnique Iris IDs:")
+print(df["iris_id"].unique())
+
+print("\nSpecies:")
+print(df["species"].unique())
+
+print("\nDataset is ready for Feast.")
