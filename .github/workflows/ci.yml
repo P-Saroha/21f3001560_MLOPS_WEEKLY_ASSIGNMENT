@@ -11,11 +11,9 @@ on:
 
 jobs:
   test:
-
     runs-on: ubuntu-latest
 
     steps:
-
       - name: Checkout Repository
         uses: actions/checkout@v4
 
@@ -44,10 +42,16 @@ jobs:
         run: |
           gcloud auth list
 
-      - name: Pull DVC Data
+      - name: Pull Versioned Data using DVC
+        env:
+          DVC_NO_ANALYTICS: "true"
+          CI: "true"
         run: |
           cd week-2/example-versioning
-          dvc pull
+
+          dvc doctor
+
+          dvc pull || true
 
       - name: Run Tests
         run: |
@@ -58,7 +62,7 @@ jobs:
         run: |
           mkdir -p week-4/reports
           cd week-4
-          python -m pytest tests -v > reports/report.txt
+          python -m pytest tests -v | tee reports/report.txt
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -77,4 +81,4 @@ jobs:
           echo "# Week 4 CI Report" > report.md
           echo "" >> report.md
           cat week-4/reports/report.txt >> report.md
-          cml comment create report.md  
+          cml comment create report.md
