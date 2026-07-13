@@ -1,95 +1,99 @@
+from pathlib import Path
+
 import pandas as pd
 import joblib
 
 from feast import FeatureStore
 
 # ==========================================================
-# Load Model and Label Encoder
+# Paths
 # ==========================================================
 
-model = joblib.load("iris_model.pkl")
-label_encoder = joblib.load("label_encoder.pkl")
+BASE_DIR = Path(__file__).resolve().parent
 
-# ==========================================================
-# Connect to Feast Repository
-# ==========================================================
+MODEL_PATH = BASE_DIR / "iris_model.pkl"
 
-store = FeatureStore(
-    repo_path="feature_repo/feature_repo"
-)
+ENCODER_PATH = BASE_DIR / "label_encoder.pkl"
 
-# ==========================================================
-# Read Original Dataset
-# ==========================================================
+DATA_PATH = BASE_DIR / "feature_repo" / "feature_repo" / "data" / "iris_data_adapted_for_feast.csv"
 
-raw_df = pd.read_csv(
-    "feature_repo/feature_repo/data/iris_data_adapted_for_feast.csv"
-)
+FEATURE_REPO = BASE_DIR / "feature_repo" / "feature_repo"
 
-# ----------------------------------------------------------
-# Choose one entity for inference
-# ----------------------------------------------------------
 
-sample = raw_df.iloc[0]
+def predict_sample():
 
-iris_id = int(sample["iris_id"])
+    model = joblib.load(MODEL_PATH)
 
-# ==========================================================
-# Retrieve Online Features from Feast
-# ==========================================================
+    label_encoder = joblib.load(
+        ENCODER_PATH
+    )
 
-online_features = store.get_online_features(
-    features=[
-        "iris_features:sepal_length",
-        "iris_features:sepal_width",
-        "iris_features:petal_length",
-        "iris_features:petal_width",
-    ],
-    entity_rows=[
+    store = FeatureStore(
+        repo_path=str(FEATURE_REPO)
+    )
+
+    raw_df = pd.read_csv(DATA_PATH)
+
+    sample = raw_df.iloc[0]
+
+    iris_id = int(sample["iris_id"])
+
+    online_features = store.get_online_features(
+        features=[
+            "iris_features:sepal_length",
+            "iris_features:sepal_width",
+            "iris_features:petal_length",
+            "iris_features:petal_width",
+        ],
+        entity_rows=[
+            {
+                "iris_id": iris_id
+            }
+        ],
+    ).to_dict()
+
+    X = pd.DataFrame(
         {
-            "iris_id": iris_id
+            "sepal_length": [
+                online_features["sepal_length"][0]
+            ],
+            "sepal_width": [
+                online_features["sepal_width"][0]
+            ],
+            "petal_length": [
+                online_features["petal_length"][0]
+            ],
+            "petal_width": [
+                online_features["petal_width"][0]
+            ],
         }
-    ],
-).to_dict()
+    )
 
-print("=" * 50)
-print(f"Iris ID : {iris_id}")
-print("=" * 50)
+    prediction = model.predict(X)[0]
 
-print("\nRetrieved Features From Feast\n")
-print(online_features)
+    predicted_species = label_encoder.inverse_transform(
+        [prediction]
+    )[0]
 
-# ==========================================================
-# Prepare Input for Prediction
-# ==========================================================
+    actual_species = sample["species"]
 
-X = pd.DataFrame(
-    {
-        "sepal_length": [online_features["sepal_length"][0]],
-        "sepal_width": [online_features["sepal_width"][0]],
-        "petal_length": [online_features["petal_length"][0]],
-        "petal_width": [online_features["petal_width"][0]],
-    }
-)
+    return predicted_species, actual_species
 
-# ==========================================================
-# Prediction
-# ==========================================================
 
-prediction = model.predict(X)[0]
+def main():
 
-predicted_species = label_encoder.inverse_transform([prediction])[0]
+    predicted, actual = predict_sample()
 
-actual_species = sample["species"]
+    print("=" * 50)
 
-# ==========================================================
-# Results
-# ==========================================================
+    print("Prediction :", predicted)
 
-print("\nPrediction using Feast Features")
-print(predicted_species)
+    print("Actual     :", actual)
 
-print("\nActual Species from Dataset")
-print(actual_species)
+    print("Match      :", predicted == actual)
 
-print("\nPrediction Match:", predicted_species == actual_species)
+    print("=" * 50)
+
+
+if __name__ == "__main__":
+    main()

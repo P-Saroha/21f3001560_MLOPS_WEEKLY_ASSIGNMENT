@@ -1,58 +1,59 @@
+from pathlib import Path
+
 import pandas as pd
-import os
 
 # ==========================================================
-# IITM Feast Dataset Path
+# Paths
 # ==========================================================
 
-DATA_PATH = "feature_repo/feature_repo/data/iris_data_adapted_for_feast.csv"
+BASE_DIR = Path(__file__).resolve().parent
 
-# ==========================================================
-# Verify Dataset Exists
-# ==========================================================
+DATA_PATH = BASE_DIR / "feature_repo" / "feature_repo" / "data" / "iris_data_adapted_for_feast.csv"
 
-if not os.path.exists(DATA_PATH):
-    raise FileNotFoundError(
-        f"Dataset not found:\n{DATA_PATH}"
+
+def load_dataset():
+
+    df = pd.read_csv(DATA_PATH)
+
+    df["event_timestamp"] = pd.to_datetime(
+        df["event_timestamp"]
     )
 
-# ==========================================================
-# Load Dataset
-# ==========================================================
+    df["created_timestamp"] = pd.to_datetime(
+        df["created_timestamp"]
+    )
 
-df = pd.read_csv(DATA_PATH)
+    return df
 
-# ==========================================================
-# Convert Timestamp Columns
-# ==========================================================
 
-df["event_timestamp"] = pd.to_datetime(df["event_timestamp"])
-df["created_timestamp"] = pd.to_datetime(df["created_timestamp"])
+def main():
 
-# ==========================================================
-# Display Dataset Information
-# ==========================================================
+    df = load_dataset()
 
-print("\n==============================")
-print("IITM Feast Dataset Loaded")
-print("==============================\n")
+    print("\n==============================")
+    print("IITM Feast Dataset Loaded")
+    print("==============================")
 
-print("Dataset Shape:")
-print(df.shape)
+    print("\nShape")
+    print(df.shape)
 
-print("\nColumns:")
-print(df.columns.tolist())
+    print("\nColumns")
+    print(df.columns.tolist())
 
-print("\nFirst Five Rows:")
-print(df.head())
+    print("\nData Types")
+    print(df.dtypes)
 
-print("\nData Types:")
-print(df.dtypes)
+    print("\nFirst Five Rows")
+    print(df.head())
 
-print("\nUnique Iris IDs:")
-print(df["iris_id"].unique())
+    print("\nUnique Iris IDs")
+    print(df["iris_id"].unique())
 
-print("\nSpecies:")
-print(df["species"].unique())
+    print("\nSpecies")
+    print(df["species"].unique())
 
-print("\nDataset is ready for Feast.")
+    print("\nDataset Ready For Feast")
+
+
+if __name__ == "__main__":
+    main()

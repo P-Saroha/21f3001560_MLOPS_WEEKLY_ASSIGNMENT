@@ -1,0 +1,9 @@
+pytest
+pandas
+numpy
+joblib
+scikit-learn
+feast
+dvc
+dvc-gs
+cml
