@@ -9,72 +9,89 @@ on:
     branches:
       - "**"
 
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
 
     steps:
+      # Checkout Repository
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      # Setup Python
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
+      # Upgrade pip
       - name: Upgrade pip
         run: |
           python -m pip install --upgrade pip setuptools wheel
 
+      # Install Dependencies
       - name: Install Python Dependencies
         run: |
           python -m pip install -r week-4/requirements.txt
 
+      # Authenticate to Google Cloud
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
           credentials_json: '${{ secrets.GCP_SA_KEY }}'
 
+      # Install gcloud
       - name: Setup Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
+      # Verify Login
       - name: Verify Authentication
         run: |
           gcloud auth list
 
-      - name: Pull Versioned Data using DVC
+      # Pull versioned data and model from DVC
+      - name: Pull DVC Artifacts
         env:
           DVC_NO_ANALYTICS: "true"
           CI: "true"
         run: |
           cd week-2/example-versioning
-
           dvc doctor
-
           dvc pull || true
 
-      - name: Run Tests
+      # Run Tests
+      - name: Run Pytest
         run: |
           cd week-4
           python -m pytest tests -v
 
+      # Save Report
       - name: Generate Test Report
         run: |
           mkdir -p week-4/reports
           cd week-4
           python -m pytest tests -v | tee reports/report.txt
 
+      # Setup Node
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
 
+      # Install CML
       - name: Install CML
         run: |
           npm install -g @dvcorg/cml
 
+      # Publish PR Comment
       - name: Publish CML Report
         if: github.event_name == 'pull_request'
+        continue-on-error: true
         env:
           REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
