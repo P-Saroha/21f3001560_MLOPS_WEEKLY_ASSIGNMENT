@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+.env/
+venv/
+.venv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Google Cloud service account keys
+*.json
+!example-*.json
+
+# Local ML artifacts (optional if generated locally)
+*.log
+
+# macOS / Linux
+.DS_Store
