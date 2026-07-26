@@ -1,0 +1,274 @@
+=========================================================
+WEEK 6 WORKFLOW
+Deploying the IRIS Prediction API on Google Kubernetes Engine
+=========================================================
+
+Problem Statement
+-----------------
+The objective of this assignment is to deploy the IRIS Machine Learning Prediction API on Google Kubernetes Engine (GKE).
+
+The API developed in previous assignments is containerized using Docker, uploaded to Google Artifact Registry, and deployed on a Kubernetes cluster using Deployment and Service resources.
+
+GitHub Actions is extended to automate the build, image push, and deployment process.
+
+---------------------------------------------------------
+
+Technologies Used
+-----------------
+
+Python
+FastAPI
+Docker
+Google Cloud Platform
+Artifact Registry
+Google Kubernetes Engine
+Kubernetes
+GitHub Actions
+Scikit-Learn
+Joblib
+
+---------------------------------------------------------
+
+Overall Architecture
+
+FastAPI Application
+
+↓
+
+Docker Image
+
+↓
+
+Artifact Registry
+
+↓
+
+Google Kubernetes Engine
+
+↓
+
+Deployment
+
+↓
+
+Service
+
+↓
+
+LoadBalancer
+
+↓
+
+Public Prediction API
+
+---------------------------------------------------------
+
+Step 1
+Create FastAPI Application
+
+Created
+
+iris_fastapi.py
+
+Endpoints
+
+GET /
+
+POST /predict
+
+Model loaded using
+
+iris_model.pkl
+
+label_encoder.pkl
+
+---------------------------------------------------------
+
+Step 2
+Dockerize the Application
+
+Created Dockerfile
+
+Build Docker Image
+
+docker build -t iris-api:v1 .
+
+Run Docker Container
+
+docker run -d -p 8200:8200 iris-api:v1
+
+Verify API
+
+curl http://localhost:8200/
+
+---------------------------------------------------------
+
+Step 3
+Configure Artifact Registry
+
+Enable APIs
+
+gcloud services enable artifactregistry.googleapis.com
+
+Configure Docker
+
+gcloud auth configure-docker us-central1-docker.pkg.dev
+
+Tag Image
+
+docker tag iris-api:v1 \
+us-central1-docker.pkg.dev/<PROJECT_ID>/iris-repo/iris-api:latest
+
+Push Image
+
+docker push \
+us-central1-docker.pkg.dev/<PROJECT_ID>/iris-repo/iris-api:latest
+
+---------------------------------------------------------
+
+Step 4
+Create Kubernetes Cluster
+
+Create Cluster
+
+gcloud container clusters create iris-cluster \
+--zone us-central1-a \
+--num-nodes 1
+
+Configure kubectl
+
+gcloud container clusters get-credentials iris-cluster \
+--zone us-central1-a
+
+Verify
+
+kubectl get nodes
+
+---------------------------------------------------------
+
+Step 5
+Deploy Application
+
+Create Deployment
+
+kubectl apply -f deployment.yaml
+
+Create Service
+
+kubectl apply -f service.yaml
+
+Verify Pods
+
+kubectl get pods
+
+Verify Service
+
+kubectl get services
+
+---------------------------------------------------------
+
+Step 6
+Verify API
+
+Health Endpoint
+
+curl http://<EXTERNAL_IP>/
+
+Prediction Endpoint
+
+curl -X POST http://<EXTERNAL_IP>/predict \
+-H "Content-Type: application/json" \
+-d '{
+"sepal_length":5.1,
+"sepal_width":3.5,
+"petal_length":1.4,
+"petal_width":0.2
+}'
+
+Prediction Returned
+
+{
+"prediction":"setosa"
+}
+
+---------------------------------------------------------
+
+GitHub Actions
+
+Pipeline Steps
+
+Checkout Repository
+
+↓
+
+Install Dependencies
+
+↓
+
+Authenticate to Google Cloud
+
+↓
+
+Build Docker Image
+
+↓
+
+Push Image to Artifact Registry
+
+↓
+
+Get GKE Credentials
+
+↓
+
+Deploy to Kubernetes
+
+↓
+
+Restart Deployment
+
+---------------------------------------------------------
+
+Files Created
+
+week-6/
+
+Dockerfile
+
+iris_fastapi.py
+
+deployment.yaml
+
+service.yaml
+
+requirements.txt
+
+README.md
+
+workflow.txt
+
+---------------------------------------------------------
+
+Results
+
+Successfully built Docker image.
+
+Successfully pushed image to Artifact Registry.
+
+Successfully created GKE cluster.
+
+Successfully deployed Kubernetes Deployment.
+
+Successfully exposed API using LoadBalancer.
+
+Successfully served predictions from deployed FastAPI application.
+
+Successfully integrated Continuous Deployment using GitHub Actions.
+
+---------------------------------------------------------
+
+Conclusion
+
+This assignment demonstrates a complete cloud deployment pipeline for a machine learning application.
+
+The FastAPI application was containerized using Docker, stored in Google Artifact Registry, deployed on Google Kubernetes Engine, and automated using GitHub Actions, providing a production-ready deployment workflow.
