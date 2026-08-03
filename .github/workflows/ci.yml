@@ -1,4 +1,4 @@
-name: Week 6 CI-CD Pipeline
+name: Week 7 CI-CD Pipeline
 
 on:
   push:
@@ -44,7 +44,7 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install -r week-4/requirements.txt
-          python -m pip install -r week-6/requirements.txt
+          python -m pip install -r week-7/requirements.txt
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
@@ -71,13 +71,13 @@ jobs:
       - name: Build Docker Image
         run: |
           docker build \
-          -t us-central1-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE:latest \
-          ./week-6
+            -t us-central1-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE:latest \
+            ./week-7
 
       - name: Push Docker Image
         run: |
           docker push \
-          us-central1-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE:latest
+            us-central1-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE:latest
 
       - name: Get GKE Credentials
         uses: google-github-actions/get-gke-credentials@v2
@@ -87,10 +87,38 @@ jobs:
 
       - name: Deploy to GKE
         run: |
-          kubectl apply -f week-6/deployment.yaml
-          kubectl apply -f week-6/service.yaml
+          kubectl apply -f week-7/deployment.yaml
+          kubectl apply -f week-7/service.yaml
 
       - name: Restart Deployment
         run: |
           kubectl rollout restart deployment iris-api
-          kubectl rollout status deployment iris-api
+          kubectl rollout status deployment/iris-api --timeout=180s
+
+      - name: Install wrk
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wrk
+
+      - name: Wait for External IP
+        run: |
+          for i in {1..30}; do
+            EXTERNAL_IP=$(kubectl get svc iris-api-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+            if [ ! -z "$EXTERNAL_IP" ]; then
+              echo "SERVICE_IP=$EXTERNAL_IP" >> $GITHUB_ENV
+              echo "External IP: $EXTERNAL_IP"
+              exit 0
+            fi
+            echo "Waiting for LoadBalancer IP..."
+            sleep 10
+          done
+          echo "External IP not assigned."
+          exit 1
+
+      - name: Health Check
+        run: |
+          curl http://$SERVICE_IP/
+
+      - name: Stress Test with wrk
+        run: |
+          wrk -t4 -c1000 -d30s http://$SERVICE_IP/
