@@ -1,274 +1,342 @@
 =========================================================
-WEEK 6 WORKFLOW
-Deploying the IRIS Prediction API on Google Kubernetes Engine
+WEEK 7 WORKFLOW
+Stress Testing, Observability & Scaling the IRIS Pipeline
 =========================================================
 
-Problem Statement
------------------
-The objective of this assignment is to deploy the IRIS Machine Learning Prediction API on Google Kubernetes Engine (GKE).
-
-The API developed in previous assignments is containerized using Docker, uploaded to Google Artifact Registry, and deployed on a Kubernetes cluster using Deployment and Service resources.
-
-GitHub Actions is extended to automate the build, image push, and deployment process.
-
----------------------------------------------------------
-
-Technologies Used
------------------
-
-Python
-FastAPI
-Docker
-Google Cloud Platform
-Artifact Registry
-Google Kubernetes Engine
-Kubernetes
-GitHub Actions
-Scikit-Learn
-Joblib
+Objective
+---------
+Validate the deployed IRIS API under high concurrency, configure Kubernetes
+Horizontal Pod Autoscaler (HPA), monitor the application using Google Cloud
+Monitoring and Cloud Logging, and analyze performance bottlenecks under
+constrained scaling.
 
 ---------------------------------------------------------
-
-Overall Architecture
-
-FastAPI Application
-
-↓
-
-Docker Image
-
-↓
-
-Artifact Registry
-
-↓
-
-Google Kubernetes Engine
-
-↓
-
-Deployment
-
-↓
-
-Service
-
-↓
-
-LoadBalancer
-
-↓
-
-Public Prediction API
-
+STEP 1: Activate Virtual Environment
 ---------------------------------------------------------
 
-Step 1
-Create FastAPI Application
+cd ~/21f3001560_MLOPS_WEEKLY_ASSIGNMENT
 
-Created
+source .env/bin/activate
 
-iris_fastapi.py
+Verify Python:
 
-Endpoints
-
-GET /
-
-POST /predict
-
-Model loaded using
-
-iris_model.pkl
-
-label_encoder.pkl
+python --version
 
 ---------------------------------------------------------
-
-Step 2
-Dockerize the Application
-
-Created Dockerfile
-
-Build Docker Image
-
-docker build -t iris-api:v1 .
-
-Run Docker Container
-
-docker run -d -p 8200:8200 iris-api:v1
-
-Verify API
-
-curl http://localhost:8200/
-
+STEP 2: Verify GCP Configuration
 ---------------------------------------------------------
 
-Step 3
-Configure Artifact Registry
+Check active project:
 
-Enable APIs
+gcloud config get-value project
 
-gcloud services enable artifactregistry.googleapis.com
+Check authenticated account:
 
-Configure Docker
+gcloud auth list
 
-gcloud auth configure-docker us-central1-docker.pkg.dev
+List GKE clusters:
 
-Tag Image
-
-docker tag iris-api:v1 \
-us-central1-docker.pkg.dev/<PROJECT_ID>/iris-repo/iris-api:latest
-
-Push Image
-
-docker push \
-us-central1-docker.pkg.dev/<PROJECT_ID>/iris-repo/iris-api:latest
+gcloud container clusters list
 
 ---------------------------------------------------------
-
-Step 4
-Create Kubernetes Cluster
-
-Create Cluster
-
-gcloud container clusters create iris-cluster \
---zone us-central1-a \
---num-nodes 1
-
-Configure kubectl
+STEP 3: Connect to GKE Cluster
+---------------------------------------------------------
 
 gcloud container clusters get-credentials iris-cluster \
---zone us-central1-a
+    --zone us-central1-a \
+    --project project-a74bda7f-3a9e-4ff2-a23
 
-Verify
+Verify nodes:
 
 kubectl get nodes
 
 ---------------------------------------------------------
+STEP 4: Verify Existing Deployment
+---------------------------------------------------------
 
-Step 5
-Deploy Application
+View Deployments:
 
-Create Deployment
+kubectl get deployment
+
+View Services:
+
+kubectl get svc
+
+View Running Pods:
+
+kubectl get pods
+
+Describe Deployment:
+
+kubectl describe deployment iris-api
+
+---------------------------------------------------------
+STEP 5: Verify API
+---------------------------------------------------------
+
+Home Endpoint
+
+curl http://34.44.129.164/
+
+Prediction Endpoint
+
+curl -X POST http://34.44.129.164/predict \
+-H "Content-Type: application/json" \
+-d '{
+  "sepal_length": 5.1,
+  "sepal_width": 3.5,
+  "petal_length": 1.4,
+  "petal_width": 0.2
+}'
+
+Expected Output
+
+{
+  "prediction":"setosa"
+}
+
+---------------------------------------------------------
+STEP 6: Deploy Updated Resources
+---------------------------------------------------------
+
+Apply Deployment
 
 kubectl apply -f deployment.yaml
 
-Create Service
+Apply Service
 
 kubectl apply -f service.yaml
+
+Verify rollout
+
+kubectl rollout status deployment/iris-api
+
+---------------------------------------------------------
+STEP 7: Configure Horizontal Pod Autoscaler
+---------------------------------------------------------
+
+Apply HPA
+
+kubectl apply -f hpa.yaml
+
+Verify HPA
+
+kubectl get hpa
 
 Verify Pods
 
 kubectl get pods
 
-Verify Service
-
-kubectl get services
-
+---------------------------------------------------------
+STEP 8: Stress Testing using wrk
 ---------------------------------------------------------
 
-Step 6
-Verify API
+Run High-Concurrency Load Test
 
-Health Endpoint
+wrk -t4 -c1000 -d30s -s post.lua http://34.44.129.164/predict
 
-curl http://<EXTERNAL_IP>/
+Observe:
 
-Prediction Endpoint
-
-curl -X POST http://<EXTERNAL_IP>/predict \
--H "Content-Type: application/json" \
--d '{
-"sepal_length":5.1,
-"sepal_width":3.5,
-"petal_length":1.4,
-"petal_width":0.2
-}'
-
-Prediction Returned
-
-{
-"prediction":"setosa"
-}
+- Requests/sec
+- Latency
+- Socket Errors
+- Timeouts
 
 ---------------------------------------------------------
-
-GitHub Actions
-
-Pipeline Steps
-
-Checkout Repository
-
-↓
-
-Install Dependencies
-
-↓
-
-Authenticate to Google Cloud
-
-↓
-
-Build Docker Image
-
-↓
-
-Push Image to Artifact Registry
-
-↓
-
-Get GKE Credentials
-
-↓
-
-Deploy to Kubernetes
-
-↓
-
-Restart Deployment
-
+STEP 9: Observe Autoscaling
 ---------------------------------------------------------
 
-Files Created
+Open another terminal
 
-week-6/
+Watch HPA
+
+watch -n1 kubectl get hpa
+
+Open another terminal
+
+Watch Pods
+
+watch -n1 kubectl get pods
+
+Observe:
+
+- Replica count
+- CPU utilization
+- Pod scaling
+
+---------------------------------------------------------
+STEP 10: Cloud Monitoring
+---------------------------------------------------------
+
+Open Google Cloud Console
+
+Observability
+↓
+
+Monitoring
+↓
+
+Metrics Explorer
+
+Monitor:
+
+- CPU Usage
+- Memory Usage
+
+Run wrk again while monitoring graphs.
+
+---------------------------------------------------------
+STEP 11: Cloud Logging
+---------------------------------------------------------
+
+Open
+
+Observability
+↓
+
+Logging
+↓
+
+Logs Explorer
+
+Query
+
+resource.type="k8s_container"
+resource.labels.container_name="iris-api"
+
+Click
+
+Run Query
+
+Observe
+
+- Request logs
+- Application logs
+- Container logs
+
+---------------------------------------------------------
+STEP 12: Bottleneck Analysis
+---------------------------------------------------------
+
+Edit hpa.yaml
+
+Change
+
+maxReplicas: 3
+
+to
+
+maxReplicas: 1
+
+Apply
+
+kubectl apply -f hpa.yaml
+
+Verify
+
+kubectl get hpa
+
+Run Stress Test
+
+wrk -t4 -c2000 -d30s -s post.lua http://34.44.129.164/predict
+
+Observe
+
+- Higher latency
+- Increased socket timeouts
+- Reduced throughput
+- Single running pod
+
+---------------------------------------------------------
+STEP 13: Compare Results
+---------------------------------------------------------
+
+Scenario 1
+
+Connections : 1000
+
+Max Replicas : 3
+
+Observe
+
+- Requests/sec
+- Latency
+- CPU
+- Autoscaling
+
+Scenario 2
+
+Connections : 2000
+
+Max Replicas : 1
+
+Observe
+
+- Requests/sec
+- Latency
+- Socket Timeouts
+- No additional Pods
+- Performance degradation
+
+---------------------------------------------------------
+STEP 14: Verify GitHub Actions
+---------------------------------------------------------
+
+Open GitHub Repository
+
+Actions
+
+Show
+
+Week 7 CI/CD Pipeline
+
+Explain
+
+- Build
+- Push Docker Image
+- Deploy to GKE
+- Stress Test
+
+---------------------------------------------------------
+STEP 15: Repository Structure
+---------------------------------------------------------
+
+Show
+
+week-7/
 
 Dockerfile
-
-iris_fastapi.py
 
 deployment.yaml
 
 service.yaml
 
-requirements.txt
+hpa.yaml
 
-README.md
+post.lua
+
+iris_fastapi.py
 
 workflow.txt
 
----------------------------------------------------------
-
-Results
-
-Successfully built Docker image.
-
-Successfully pushed image to Artifact Registry.
-
-Successfully created GKE cluster.
-
-Successfully deployed Kubernetes Deployment.
-
-Successfully exposed API using LoadBalancer.
-
-Successfully served predictions from deployed FastAPI application.
-
-Successfully integrated Continuous Deployment using GitHub Actions.
+README.md
 
 ---------------------------------------------------------
+Learning Outcomes
+---------------------------------------------------------
 
-Conclusion
+✔ Performed stress testing using wrk
 
-This assignment demonstrates a complete cloud deployment pipeline for a machine learning application.
+✔ Configured Kubernetes Horizontal Pod Autoscaler
 
-The FastAPI application was containerized using Docker, stored in Google Artifact Registry, deployed on Google Kubernetes Engine, and automated using GitHub Actions, providing a production-ready deployment workflow.
+✔ Observed autoscaling behaviour
+
+✔ Monitored CPU and Memory using Google Cloud Monitoring
+
+✔ Analyzed application logs using Cloud Logging
+
+✔ Compared performance under autoscaling and constrained scaling
+
+✔ Identified latency and timeout bottlenecks under heavy load
+
+✔ Integrated stress testing into the CI/CD pipeline
