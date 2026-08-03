@@ -24,11 +24,9 @@ env:
 
 jobs:
   build-test-deploy:
-
     runs-on: ubuntu-latest
 
     steps:
-
       - name: Checkout Repository
         uses: actions/checkout@v4
 
@@ -93,32 +91,43 @@ jobs:
       - name: Restart Deployment
         run: |
           kubectl rollout restart deployment iris-api
-          kubectl rollout status deployment/iris-api --timeout=180s
+          kubectl rollout status deployment/iris-api --timeout=300s
 
       - name: Install wrk
         run: |
           sudo apt-get update
           sudo apt-get install -y wrk
 
-      - name: Wait for External IP
+      - name: Get External IP
         run: |
           for i in {1..30}; do
             EXTERNAL_IP=$(kubectl get svc iris-api-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-            if [ ! -z "$EXTERNAL_IP" ]; then
+            if [ -n "$EXTERNAL_IP" ]; then
               echo "SERVICE_IP=$EXTERNAL_IP" >> $GITHUB_ENV
               echo "External IP: $EXTERNAL_IP"
-              exit 0
+              break
             fi
-            echo "Waiting for LoadBalancer IP..."
+            echo "Waiting for External IP..."
             sleep 10
           done
-          echo "External IP not assigned."
-          exit 1
 
-      - name: Health Check
+      - name: Wait for Service to Become Reachable
         run: |
-          curl http://$SERVICE_IP/
+          echo "Waiting for service..."
+          sleep 60
+
+          for i in {1..10}; do
+            if curl -fs http://$SERVICE_IP/; then
+              echo "Service is reachable."
+              exit 0
+            fi
+            echo "Retry $i/10..."
+            sleep 15
+          done
+
+          echo "Service did not become reachable."
+          exit 1
 
       - name: Stress Test with wrk
         run: |
-          wrk -t4 -c1000 -d30s http://$SERVICE_IP/
+          wrk -t4 -c1000 -d30s -s week-7/post.lua http://$SERVICE_IP/predict
