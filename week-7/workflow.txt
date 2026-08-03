@@ -1,0 +1,342 @@
+=========================================================
+WEEK 7 WORKFLOW
+Stress Testing, Observability & Scaling the IRIS Pipeline
+=========================================================
+
+Objective
+---------
+Validate the deployed IRIS API under high concurrency, configure Kubernetes
+Horizontal Pod Autoscaler (HPA), monitor the application using Google Cloud
+Monitoring and Cloud Logging, and analyze performance bottlenecks under
+constrained scaling.
+
+---------------------------------------------------------
+STEP 1: Activate Virtual Environment
+---------------------------------------------------------
+
+cd ~/21f3001560_MLOPS_WEEKLY_ASSIGNMENT
+
+source .env/bin/activate
+
+Verify Python:
+
+python --version
+
+---------------------------------------------------------
+STEP 2: Verify GCP Configuration
+---------------------------------------------------------
+
+Check active project:
+
+gcloud config get-value project
+
+Check authenticated account:
+
+gcloud auth list
+
+List GKE clusters:
+
+gcloud container clusters list
+
+---------------------------------------------------------
+STEP 3: Connect to GKE Cluster
+---------------------------------------------------------
+
+gcloud container clusters get-credentials iris-cluster \
+    --zone us-central1-a \
+    --project project-a74bda7f-3a9e-4ff2-a23
+
+Verify nodes:
+
+kubectl get nodes
+
+---------------------------------------------------------
+STEP 4: Verify Existing Deployment
+---------------------------------------------------------
+
+View Deployments:
+
+kubectl get deployment
+
+View Services:
+
+kubectl get svc
+
+View Running Pods:
+
+kubectl get pods
+
+Describe Deployment:
+
+kubectl describe deployment iris-api
+
+---------------------------------------------------------
+STEP 5: Verify API
+---------------------------------------------------------
+
+Home Endpoint
+
+curl http://34.44.129.164/
+
+Prediction Endpoint
+
+curl -X POST http://34.44.129.164/predict \
+-H "Content-Type: application/json" \
+-d '{
+  "sepal_length": 5.1,
+  "sepal_width": 3.5,
+  "petal_length": 1.4,
+  "petal_width": 0.2
+}'
+
+Expected Output
+
+{
+  "prediction":"setosa"
+}
+
+---------------------------------------------------------
+STEP 6: Deploy Updated Resources
+---------------------------------------------------------
+
+Apply Deployment
+
+kubectl apply -f deployment.yaml
+
+Apply Service
+
+kubectl apply -f service.yaml
+
+Verify rollout
+
+kubectl rollout status deployment/iris-api
+
+---------------------------------------------------------
+STEP 7: Configure Horizontal Pod Autoscaler
+---------------------------------------------------------
+
+Apply HPA
+
+kubectl apply -f hpa.yaml
+
+Verify HPA
+
+kubectl get hpa
+
+Verify Pods
+
+kubectl get pods
+
+---------------------------------------------------------
+STEP 8: Stress Testing using wrk
+---------------------------------------------------------
+
+Run High-Concurrency Load Test
+
+wrk -t4 -c1000 -d30s -s post.lua http://34.44.129.164/predict
+
+Observe:
+
+- Requests/sec
+- Latency
+- Socket Errors
+- Timeouts
+
+---------------------------------------------------------
+STEP 9: Observe Autoscaling
+---------------------------------------------------------
+
+Open another terminal
+
+Watch HPA
+
+watch -n1 kubectl get hpa
+
+Open another terminal
+
+Watch Pods
+
+watch -n1 kubectl get pods
+
+Observe:
+
+- Replica count
+- CPU utilization
+- Pod scaling
+
+---------------------------------------------------------
+STEP 10: Cloud Monitoring
+---------------------------------------------------------
+
+Open Google Cloud Console
+
+Observability
+↓
+
+Monitoring
+↓
+
+Metrics Explorer
+
+Monitor:
+
+- CPU Usage
+- Memory Usage
+
+Run wrk again while monitoring graphs.
+
+---------------------------------------------------------
+STEP 11: Cloud Logging
+---------------------------------------------------------
+
+Open
+
+Observability
+↓
+
+Logging
+↓
+
+Logs Explorer
+
+Query
+
+resource.type="k8s_container"
+resource.labels.container_name="iris-api"
+
+Click
+
+Run Query
+
+Observe
+
+- Request logs
+- Application logs
+- Container logs
+
+---------------------------------------------------------
+STEP 12: Bottleneck Analysis
+---------------------------------------------------------
+
+Edit hpa.yaml
+
+Change
+
+maxReplicas: 3
+
+to
+
+maxReplicas: 1
+
+Apply
+
+kubectl apply -f hpa.yaml
+
+Verify
+
+kubectl get hpa
+
+Run Stress Test
+
+wrk -t4 -c2000 -d30s -s post.lua http://34.44.129.164/predict
+
+Observe
+
+- Higher latency
+- Increased socket timeouts
+- Reduced throughput
+- Single running pod
+
+---------------------------------------------------------
+STEP 13: Compare Results
+---------------------------------------------------------
+
+Scenario 1
+
+Connections : 1000
+
+Max Replicas : 3
+
+Observe
+
+- Requests/sec
+- Latency
+- CPU
+- Autoscaling
+
+Scenario 2
+
+Connections : 2000
+
+Max Replicas : 1
+
+Observe
+
+- Requests/sec
+- Latency
+- Socket Timeouts
+- No additional Pods
+- Performance degradation
+
+---------------------------------------------------------
+STEP 14: Verify GitHub Actions
+---------------------------------------------------------
+
+Open GitHub Repository
+
+Actions
+
+Show
+
+Week 7 CI/CD Pipeline
+
+Explain
+
+- Build
+- Push Docker Image
+- Deploy to GKE
+- Stress Test
+
+---------------------------------------------------------
+STEP 15: Repository Structure
+---------------------------------------------------------
+
+Show
+
+week-7/
+
+Dockerfile
+
+deployment.yaml
+
+service.yaml
+
+hpa.yaml
+
+post.lua
+
+iris_fastapi.py
+
+workflow.txt
+
+README.md
+
+---------------------------------------------------------
+Learning Outcomes
+---------------------------------------------------------
+
+✔ Performed stress testing using wrk
+
+✔ Configured Kubernetes Horizontal Pod Autoscaler
+
+✔ Observed autoscaling behaviour
+
+✔ Monitored CPU and Memory using Google Cloud Monitoring
+
+✔ Analyzed application logs using Cloud Logging
+
+✔ Compared performance under autoscaling and constrained scaling
+
+✔ Identified latency and timeout bottlenecks under heavy load
+
+✔ Integrated stress testing into the CI/CD pipeline

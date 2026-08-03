@@ -1,0 +1,38 @@
+
+C
+#
+__dummy"
+__dummy_idJfeature_repo
+ÀªÒÀè­“ÀªÒÀè­“
+@
+ 
+iris_id"iris_idJfeature_repo
+ÀªÒ ¢º“ÀªÒ ¢º“1"$a8825255-c71f-41e3-9997-5fbe6417d464*¬“ªÒ İ–Ğ2¶
+é
+iris_featuresfeature_repoiris_id"
+sepal_length"
+sepal_width"
+petal_length"
+petal_width"
+species2€ç„:Îevent_timestamp*created_timestampZ*(data/iris_data_adapted_for_feast.parquetŠ1feast.infra.offline_stores.file_source.FileSource¢(data/iris_data_adapted_for_feast.parquet’“ªÒ°‹Ã:"“ªÒ°‹Ã:@b
+iris_id’latestH
+ÀªÒàÂÄ“¬“ªÒğºıÏ
+Ò§¥Ã€ÿû¯ÍªÒ
+ÍªÒ¦“ªÒ0R¸
+µ
+,feast.infra.online_stores.sqlite.SqliteTable"„
+f/home/jupyter/21f3001560_MLOPS_WEEKLY_ASSIGNMENT/week-3/feature_repo/feature_repo/data/online_store.dbfeature_repo_iris_featuresbŞevent_timestamp*created_timestampZ*(data/iris_data_adapted_for_feast.parquetŠ1feast.infra.offline_stores.file_source.FileSource¢(data/iris_data_adapted_for_feast.parquetªfeature_repo’ÀªÒè·Ê_"ÀªÒøÁ˜“Š,
+
+feature_repo
+ÀªÒ ÁŸaÀªÒ ÁŸa’ğ
+í
+iris_featuresfeature_repo"feature_view*‹
+ê
+iris_featuresfeature_repoiris_id"
+sepal_length"
+sepal_width"
+petal_length"
+petal_width"
+species2€ç„:Ïevent_timestamp*created_timestampZ*(data/iris_data_adapted_for_feast.parquetŠ1feast.infra.offline_stores.file_source.FileSource¢(data/iris_data_adapted_for_feast.parquet’ÀªÒè·Ê_"ÀªÒøÁ˜“@b
+iris_id’latest
+ÀªÒàÂÄ“ÀªÒàÂÄ“2ÀªÒğ‰ñ“B$8352dc31-c060-499f-a5bc-73338ce2a285

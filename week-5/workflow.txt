@@ -1,0 +1,439 @@
+=========================================================
+WEEK 5 WORKFLOW
+Integrating MLflow into the IRIS Pipeline
+=========================================================
+
+Student Name : Parveen Saroha
+Roll Number  : 21f3001560
+
+=========================================================
+PROBLEM STATEMENT
+=========================================================
+
+The objective of Week-5 is to integrate MLflow into the existing IRIS
+Machine Learning pipeline developed in previous assignments.
+
+The pipeline already included:
+
+• Google Vertex AI Workbench
+• Feast Feature Store
+• Version controlled dataset
+• Random Forest model training
+
+In this assignment, MLflow is introduced to provide experiment tracking,
+model versioning and model registry support.
+
+The major objectives are:
+
+1. Perform hyperparameter tuning.
+2. Log all experiments into MLflow.
+3. Compare experiment runs.
+4. Register trained models in MLflow Model Registry.
+5. Load the registered model directly from MLflow during prediction instead
+   of using local model artifacts.
+
+=========================================================
+OBJECTIVES COMPLETED
+=========================================================
+
+Task 1
+-------
+Implemented manual hyperparameter tuning using Random Forest.
+
+Hyperparameters Tested
+
+• max_depth = [3, 5, 10]
+• n_estimators = [50, 100]
+
+Total Experiments
+
+3 × 2 = 6 Runs
+
+Each experiment was trained independently and evaluated.
+
+---------------------------------------------------------
+
+Task 2
+-------
+Integrated MLflow Experiment Tracking.
+
+For every experiment the following information was logged.
+
+Parameters
+
+• max_depth
+• n_estimators
+• random_state
+
+Metrics
+
+• Accuracy
+• Precision
+• Recall
+• F1 Score
+
+Artifacts
+
+• Trained Random Forest model
+
+Each experiment appears as a separate MLflow Run.
+
+---------------------------------------------------------
+
+Task 3
+-------
+Compared all experiments using the MLflow UI.
+
+The MLflow Dashboard provides
+
+• Experiment comparison
+• Parameter comparison
+• Metric comparison
+• Best performing run
+• Model artifacts
+
+---------------------------------------------------------
+
+Task 4
+-------
+Registered trained models in the MLflow Model Registry.
+
+Registered Model
+
+iris_random_forest
+
+Multiple model versions were automatically created.
+
+Version 1
+Version 2
+Version 3
+Version 4
+Version 5
+Version 6
+
+The model registry now manages all trained model versions.
+
+---------------------------------------------------------
+
+Task 5
+-------
+Modified the prediction pipeline.
+
+Old Workflow
+
+Prediction
+
+↓
+
+Load iris_model.pkl
+
+↓
+
+Predict
+
+New Workflow
+
+Prediction
+
+↓
+
+Load Latest Registered Model
+
+↓
+
+MLflow Model Registry
+
+↓
+
+Predict
+
+The prediction pipeline now loads the latest registered model directly
+from MLflow instead of relying on a locally stored model.
+
+=========================================================
+PROJECT ARCHITECTURE
+=========================================================
+
+                    Feast Feature Store
+                            │
+                            ▼
+                  Historical Feature Retrieval
+                            │
+                            ▼
+                 Train/Test Split
+                            │
+                            ▼
+                Hyperparameter Tuning
+                            │
+                            ▼
+               Random Forest Training
+                            │
+                            ▼
+                 MLflow Experiment Tracking
+                            │
+                            ▼
+               MLflow Model Registry
+                            │
+                ┌───────────┴───────────┐
+                │                       │
+                ▼                       ▼
+         Experiment History       Prediction Pipeline
+                                          │
+                                          ▼
+                            Load Registered Model
+                                          │
+                                          ▼
+                                     Prediction
+
+=========================================================
+FILES MODIFIED
+=========================================================
+
+week-5/
+
+train_feast.py
+
+Changes
+
+• Added MLflow integration
+• Added experiment tracking
+• Added hyperparameter tuning
+• Logged evaluation metrics
+• Registered model into MLflow
+
+---------------------------------------------------------
+
+predict_feast.py
+
+Changes
+
+• Removed dependency on locally loaded model
+• Connected to MLflow Registry
+• Automatically loads latest model version
+• Uses Feast online features for prediction
+
+=========================================================
+MLFLOW COMPONENTS USED
+=========================================================
+
+Tracking URI
+
+sqlite:///mlflow.db
+
+Experiment Name
+
+iris_feast_experiments
+
+Registered Model
+
+iris_random_forest
+
+Metrics Logged
+
+• Accuracy
+• Precision
+• Recall
+• F1 Score
+
+Parameters Logged
+
+• max_depth
+• n_estimators
+• random_state
+
+=========================================================
+HYPERPARAMETER SEARCH
+=========================================================
+
+Configuration 1
+
+max_depth = 3
+n_estimators = 50
+
+-----------------------------------
+
+Configuration 2
+
+max_depth = 3
+n_estimators = 100
+
+-----------------------------------
+
+Configuration 3
+
+max_depth = 5
+n_estimators = 50
+
+-----------------------------------
+
+Configuration 4
+
+max_depth = 5
+n_estimators = 100
+
+-----------------------------------
+
+Configuration 5
+
+max_depth = 10
+n_estimators = 50
+
+-----------------------------------
+
+Configuration 6
+
+max_depth = 10
+n_estimators = 100
+
+=========================================================
+IMPORTANT COMMANDS USED
+=========================================================
+
+Activate Environment
+
+source .env/bin/activate
+
+---------------------------------------------------------
+
+Install MLflow
+
+pip install mlflow==2.22.0
+
+---------------------------------------------------------
+
+Run Training
+
+python train_feast.py
+
+---------------------------------------------------------
+
+Launch MLflow UI
+
+mlflow ui --backend-store-uri sqlite:///mlflow.db
+
+---------------------------------------------------------
+
+Open MLflow
+
+http://127.0.0.1:5000
+
+(or Vertex AI Proxy URL)
+
+---------------------------------------------------------
+
+Run Prediction
+
+python predict_feast.py
+
+---------------------------------------------------------
+
+Check Registered Models
+
+python -c "
+from mlflow import MlflowClient
+client = MlflowClient(tracking_uri='sqlite:///mlflow.db')
+for mv in client.search_model_versions(\"name='iris_random_forest'\"):
+    print(mv.version)
+"
+
+=========================================================
+WORKFLOW FOLLOWED
+=========================================================
+
+Step 1
+
+Retrieve historical features from Feast.
+
+↓
+
+Step 2
+
+Prepare training dataset.
+
+↓
+
+Step 3
+
+Split data into training and testing sets.
+
+↓
+
+Step 4
+
+Perform hyperparameter tuning.
+
+↓
+
+Step 5
+
+Train Random Forest model.
+
+↓
+
+Step 6
+
+Evaluate model.
+
+↓
+
+Step 7
+
+Log parameters and metrics into MLflow.
+
+↓
+
+Step 8
+
+Register trained model into MLflow Registry.
+
+↓
+
+Step 9
+
+Compare experiment runs.
+
+↓
+
+Step 10
+
+Prediction pipeline fetches latest registered model.
+
+↓
+
+Step 11
+
+Retrieve online features from Feast.
+
+↓
+
+Step 12
+
+Generate prediction.
+
+=========================================================
+RESULT
+=========================================================
+
+Successfully integrated MLflow into the IRIS pipeline.
+
+Successfully completed
+
+✓ Hyperparameter tuning
+
+✓ Experiment tracking
+
+✓ Metric logging
+
+✓ Model registration
+
+✓ Model versioning
+
+✓ Prediction using MLflow Model Registry
+
+The pipeline now supports experiment management,
+model versioning and registry-based deployment while
+continuing to use Feast Feature Store for feature retrieval.
+
+=========================================================
+END OF WORKFLOW
+=========================================================
