@@ -1,0 +1,1052 @@
+======================================================================
+WEEK 10 - LLMOps WORKFLOW
+Gemini Supervised Fine-Tuning + Vertex AI Evaluation
+======================================================================
+
+
+======================================================================
+0. PROJECT INFORMATION
+======================================================================
+
+Repository:
+~/21f3001560_MLOPS_WEEKLY_ASSIGNMENT
+
+Branch:
+week_10
+
+GCP Project:
+project-a74bda7f-3a9e-4ff2-a23
+
+GCP Region:
+us-central1
+
+GCS Bucket:
+gs://21f3001560week10/
+
+Week 10 GCS Path:
+gs://21f3001560week10/week-10/
+
+Base Model:
+gemini-2.5-flash-lite
+
+
+======================================================================
+1. ACTIVATE ENVIRONMENT
+======================================================================
+
+cd ~/21f3001560_MLOPS_WEEKLY_ASSIGNMENT
+
+source .env/bin/activate
+
+Check:
+
+which python
+
+python --version
+
+
+======================================================================
+2. CHECK GIT STATUS
+======================================================================
+
+git status
+
+git branch
+
+Expected branch:
+
+week_10
+
+
+======================================================================
+3. CHECK WEEK 10 STRUCTURE
+======================================================================
+
+find week-10 -maxdepth 2 -type f | sort
+
+
+Expected important files:
+
+week-10/
+├── data/
+├── results/
+├── prepare_data.py
+├── convert_for_gemini.py
+├── evaluate_models.py
+├── README.md
+└── workflow.txt
+
+
+======================================================================
+4. VERIFY SOURCE IRIS DATA
+======================================================================
+
+python - <<'PY'
+import pandas as pd
+
+path = "week-8/data/iris_clean.csv"
+
+df = pd.read_csv(path)
+
+print("Shape:", df.shape)
+print()
+print("Columns:", df.columns.tolist())
+print()
+print("Class distribution:")
+print(df["species"].value_counts())
+PY
+
+
+Expected:
+
+Shape: (150, 5)
+
+setosa        50
+versicolor    50
+virginica     50
+
+
+======================================================================
+5. PREPARE V1 / V2 DATASETS
+======================================================================
+
+python week-10/prepare_data.py
+
+
+This creates:
+
+week-10/data/v1_train.jsonl
+week-10/data/v1_validation.jsonl
+
+week-10/data/v2_train.jsonl
+week-10/data/v2_validation.jsonl
+
+week-10/data/test.csv
+
+
+Fixed split:
+
+Training:   120
+Validation: 15
+Test:       15
+
+
+Each split is balanced across:
+
+setosa
+versicolor
+virginica
+
+
+======================================================================
+6. CHECK V1 DATASET
+======================================================================
+
+head -5 week-10/data/v1_train.jsonl
+
+
+V1 format:
+
+{
+  "input_text": "sepal_length: ..., sepal_width: ..., petal_length: ..., petal_width: ...",
+  "output_text": "setosa"
+}
+
+
+Validate:
+
+python - <<'PY'
+import json
+
+for filename in [
+    "week-10/data/v1_train.jsonl",
+    "week-10/data/v1_validation.jsonl"
+]:
+    with open(filename, encoding="utf-8") as f:
+        records = [json.loads(line) for line in f]
+
+    print(filename)
+    print("Records:", len(records))
+
+    counts = {}
+    for r in records:
+        counts[r["output_text"]] = counts.get(r["output_text"], 0) + 1
+
+    print("Classes:", counts)
+    print()
+PY
+
+
+Expected:
+
+v1_train.jsonl
+Records: 120
+
+v1_validation.jsonl
+Records: 15
+
+
+======================================================================
+7. CHECK V2 DATASET
+======================================================================
+
+head -5 week-10/data/v2_train.jsonl
+
+
+V2 uses natural-language descriptions.
+
+Example:
+
+A flower specimen has a sepal length of 4.4 cm,
+sepal width of 2.9 cm,
+petal length of 1.4 cm,
+and petal width of 0.2 cm.
+Identify the iris species.
+
+
+Expected output format:
+
+This is Iris setosa.
+
+
+======================================================================
+8. VALIDATE V1 AND V2 USE SAME SPLIT
+======================================================================
+
+python - <<'PY'
+import json
+
+files = [
+    "week-10/data/v1_train.jsonl",
+    "week-10/data/v2_train.jsonl",
+    "week-10/data/v1_validation.jsonl",
+    "week-10/data/v2_validation.jsonl",
+]
+
+for f in files:
+    with open(f, encoding="utf-8") as file:
+        records = [json.loads(line) for line in file]
+
+    print(f, ":", len(records), "records")
+PY
+
+
+Expected:
+
+v1_train.jsonl       : 120
+v2_train.jsonl       : 120
+v1_validation.jsonl  : 15
+v2_validation.jsonl  : 15
+
+
+======================================================================
+9. CHECK TEST DATA
+======================================================================
+
+python - <<'PY'
+import pandas as pd
+
+df = pd.read_csv("week-10/data/test.csv")
+
+print("Test shape:", df.shape)
+print()
+print(df["species"].value_counts().sort_index())
+PY
+
+
+Expected:
+
+Test shape: (15, 5)
+
+setosa        5
+versicolor    5
+virginica     5
+
+
+======================================================================
+10. CONVERT DATASETS TO GEMINI FORMAT
+======================================================================
+
+python week-10/convert_for_gemini.py
+
+
+Creates:
+
+week-10/data/v1_train_gemini.jsonl
+week-10/data/v1_validation_gemini.jsonl
+
+week-10/data/v2_train_gemini.jsonl
+week-10/data/v2_validation_gemini.jsonl
+
+
+======================================================================
+11. VALIDATE GEMINI JSONL FILES
+======================================================================
+
+python - <<'PY'
+import json
+from pathlib import Path
+
+data_dir = Path("week-10/data")
+
+files = [
+    "v1_train_gemini.jsonl",
+    "v1_validation_gemini.jsonl",
+    "v2_train_gemini.jsonl",
+    "v2_validation_gemini.jsonl",
+]
+
+for filename in files:
+    path = data_dir / filename
+
+    with open(path, encoding="utf-8") as f:
+        records = [json.loads(line) for line in f]
+
+    print(filename, ":", len(records), "records - VALID")
+
+print()
+print("All Gemini JSONL files are valid.")
+PY
+
+
+Expected:
+
+v1_train_gemini.jsonl: 120 records - VALID
+v1_validation_gemini.jsonl: 15 records - VALID
+v2_train_gemini.jsonl: 120 records - VALID
+v2_validation_gemini.jsonl: 15 records - VALID
+
+
+======================================================================
+12. VERIFY GCS BUCKET
+======================================================================
+
+gcloud storage ls
+
+Expected:
+
+gs://21f3001560week10/
+gs://week-2-mlops-21f3001560/
+
+
+======================================================================
+13. VERIFY UPLOADED DATASETS
+======================================================================
+
+gcloud storage ls gs://21f3001560week10/week-10/
+
+
+Expected:
+
+v1_train.jsonl
+v1_validation.jsonl
+v2_train.jsonl
+v2_validation.jsonl
+
+v1_train_gemini.jsonl
+v1_validation_gemini.jsonl
+v2_train_gemini.jsonl
+v2_validation_gemini.jsonl
+
+
+======================================================================
+14. VERTEX AI CONFIGURATION
+======================================================================
+
+Project:
+
+project-a74bda7f-3a9e-4ff2-a23
+
+Region:
+
+us-central1
+
+Base model:
+
+gemini-2.5-flash-lite
+
+Tuning method:
+
+Supervised fine-tuning
+
+Epochs:
+
+3
+
+Learning rate multiplier:
+
+1
+
+Adapter size:
+
+4
+
+
+======================================================================
+15. CREATE V1 TUNED MODEL
+======================================================================
+
+Vertex AI Console:
+
+Model Garden / Tuning
+        ↓
+Create tuned model
+        ↓
+Supervised fine-tuning
+        ↓
+Tune a foundation model
+        ↓
+Base model:
+gemini-2.5-flash-lite
+        ↓
+Region:
+us-central1
+
+
+V1 training dataset:
+
+gs://21f3001560week10/week-10/v1_train_gemini.jsonl
+
+V1 validation dataset:
+
+gs://21f3001560week10/week-10/v1_validation_gemini.jsonl
+
+
+Tuning settings:
+
+Epochs = 3
+Learning rate multiplier = 1
+Adapter size = 4
+
+
+Start tuning.
+
+
+Expected result:
+
+Status = Succeeded
+
+
+======================================================================
+16. V1 TUNING JOB INFORMATION
+======================================================================
+
+V1 tuning job:
+
+1758081855447367680
+
+V1 tuned model:
+
+projects/879328269579/locations/us-central1/models/1024551872796557312@1
+
+
+V1 display name:
+
+iris-week10-v1-raw-1
+
+
+======================================================================
+17. CREATE V2 TUNED MODEL
+======================================================================
+
+Vertex AI Console:
+
+Tuning
+        ↓
+Create tuned model
+        ↓
+Supervised fine-tuning
+        ↓
+Tune a foundation model
+        ↓
+gemini-2.5-flash-lite
+
+
+V2 training dataset:
+
+gs://21f3001560week10/week-10/v2_train_gemini.jsonl
+
+V2 validation dataset:
+
+gs://21f3001560week10/week-10/v2_validation_gemini.jsonl
+
+
+Tuning settings:
+
+Epochs = 3
+Learning rate multiplier = 1
+Adapter size = 4
+
+
+Start tuning.
+
+
+Expected result:
+
+Status = Succeeded
+
+
+======================================================================
+18. V2 TUNING JOB INFORMATION
+======================================================================
+
+V2 tuning job:
+
+153111538243207168
+
+V2 tuned model:
+
+projects/879328269579/locations/us-central1/models/6563979414462267392@1
+
+
+V2 display name:
+
+iris-week10-v2-description
+
+
+======================================================================
+19. LIST VERTEX AI ENDPOINTS
+======================================================================
+
+gcloud ai endpoints list \
+  --region=us-central1 \
+  --project=project-a74bda7f-3a9e-4ff2-a23
+
+
+Expected endpoint groups:
+
+V1:
+
+iris-week10-v1-raw-1
+
+V2:
+
+iris-week10-v2-description
+
+
+There may be multiple endpoints because
+intermediate checkpoints were deployed.
+
+
+======================================================================
+20. IDENTIFY FINAL CHECKPOINT
+======================================================================
+
+V1 evaluation endpoint:
+
+projects/879328269579/locations/us-central1/endpoints/3395965357444300800
+
+
+V1 checkpoint:
+
+3
+
+
+V2 evaluation endpoint:
+
+projects/879328269579/locations/us-central1/endpoints/5046534620875587584
+
+
+V2 checkpoint:
+
+3
+
+
+======================================================================
+21. DESCRIBE V1 ENDPOINT
+======================================================================
+
+gcloud ai endpoints describe 3395965357444300800 \
+  --region=us-central1 \
+  --project=project-a74bda7f-3a9e-4ff2-a23 \
+  --format="yaml(displayName,deployedModels)"
+
+
+Expected:
+
+displayName:
+
+iris-week10-v1-raw-1
+
+
+checkpointId:
+
+3
+
+
+======================================================================
+22. DESCRIBE V2 ENDPOINT
+======================================================================
+
+gcloud ai endpoints describe 5046534620875587584 \
+  --region=us-central1 \
+  --project=project-a74bda7f-3a9e-4ff2-a23 \
+  --format="yaml(displayName,deployedModels)"
+
+
+Expected:
+
+displayName:
+
+iris-week10-v2-description
+
+
+checkpointId:
+
+3
+
+
+======================================================================
+23. TEST V1 ENDPOINT
+======================================================================
+
+.env/bin/python - <<'PY'
+from google import genai
+from google.genai.types import HttpOptions
+
+client = genai.Client(
+    vertexai=True,
+    project="project-a74bda7f-3a9e-4ff2-a23",
+    location="us-central1",
+    http_options=HttpOptions(api_version="v1"),
+)
+
+endpoint = (
+    "projects/879328269579/locations/us-central1/"
+    "endpoints/3395965357444300800"
+)
+
+response = client.models.generate_content(
+    model=endpoint,
+    contents=(
+        "sepal_length: 5.1, sepal_width: 3.5, "
+        "petal_length: 1.4, petal_width: 0.2"
+    ),
+)
+
+print("V1 RESPONSE:")
+print(response.text)
+PY
+
+
+Expected:
+
+The model identifies the flower as Iris Setosa.
+
+
+======================================================================
+24. TEST V2 ENDPOINT
+======================================================================
+
+.env/bin/python - <<'PY'
+from google import genai
+from google.genai.types import HttpOptions
+
+client = genai.Client(
+    vertexai=True,
+    project="project-a74bda7f-3a9e-4ff2-a23",
+    location="us-central1",
+    http_options=HttpOptions(api_version="v1"),
+)
+
+endpoint = (
+    "projects/879328269579/locations/us-central1/"
+    "endpoints/5046534620875587584"
+)
+
+response = client.models.generate_content(
+    model=endpoint,
+    contents=(
+        "A flower specimen has a sepal length of 5.1 cm, "
+        "sepal width of 3.5 cm, petal length of 1.4 cm, "
+        "and petal width of 0.2 cm. "
+        "Identify the iris species."
+    ),
+)
+
+print("V2 RESPONSE:")
+print(response.text)
+PY
+
+
+======================================================================
+25. RUN FINAL MODEL EVALUATION
+======================================================================
+
+python week-10/evaluate_models.py
+
+
+The evaluator sends the same 15 test examples
+to both tuned models.
+
+
+Models:
+
+V1_RAW
+V2_DESCRIPTION
+
+
+Metrics:
+
+Accuracy
+Precision
+Recall
+F1
+Format Compliance
+
+
+======================================================================
+26. CHECK EVALUATION RESULTS
+======================================================================
+
+cat week-10/results/evaluation_results.json
+
+
+cat week-10/results/comparison.csv
+
+
+head -20 week-10/results/predictions.csv
+
+
+======================================================================
+27. FINAL RESULTS
+======================================================================
+
+V1_RAW:
+
+Accuracy = 66.67%
+
+Correct predictions:
+
+10 / 15
+
+
+V2_DESCRIPTION:
+
+Accuracy = 0.00%
+
+Correct predictions:
+
+0 / 15
+
+
+Format compliance:
+
+V1 = 0.00%
+V2 = 0.00%
+
+
+======================================================================
+28. V1 PER-CLASS RESULTS
+======================================================================
+
+Setosa:
+
+Precision = 1.00
+Recall    = 0.60
+F1        = 0.75
+
+
+Versicolor:
+
+Precision = 1.00
+Recall    = 0.40
+F1        = 0.571
+
+
+Virginica:
+
+Precision = 0.50
+Recall    = 1.00
+F1        = 0.667
+
+
+======================================================================
+29. FINAL COMPARISON
+======================================================================
+
++-------------------+----------+--------------------+
+| Model             | Accuracy | Format Compliance  |
++-------------------+----------+--------------------+
+| V1_RAW            | 66.67%   | 0.00%              |
+| V2_DESCRIPTION    | 0.00%    | 0.00%              |
++-------------------+----------+--------------------+
+
+
+Winner:
+
+V1_RAW
+
+
+Reason:
+
+V1 achieved 66.67% accuracy on the same
+15-example test dataset, while V2 achieved
+0% under the implemented evaluation protocol.
+
+
+======================================================================
+30. IMPORTANT OBSERVATION
+======================================================================
+
+V1 uses structured numerical feature input:
+
+sepal_length
+sepal_width
+petal_length
+petal_width
+
+
+V2 uses natural-language descriptions of the
+same numerical features.
+
+
+The experiment demonstrates that dataset
+representation can affect fine-tuned model
+performance.
+
+
+V1 performed better in this experiment.
+
+
+However, both models had 0% format compliance
+because their responses were not consistently
+returned in the exact expected class-label format.
+
+
+Therefore, the evaluation measures both:
+
+1. Classification correctness
+2. Output format compliance
+
+
+======================================================================
+31. IAM / API ISSUE ENCOUNTERED
+======================================================================
+
+During programmatic endpoint testing, a 403 error
+was initially encountered:
+
+Permission:
+
+aiplatform.endpoints.predict
+
+
+The authenticated account was:
+
+sarohaparveen002@gmail.com
+
+
+The permission was tested directly using the
+Vertex AI REST API and was confirmed.
+
+
+The Google GenAI client was then configured with:
+
+HttpOptions(api_version="v1")
+
+
+After this configuration, endpoint inference
+worked successfully.
+
+
+======================================================================
+32. AUTHENTICATION CHECK
+======================================================================
+
+gcloud auth list
+
+
+gcloud config get-value account
+
+
+gcloud auth application-default print-access-token \
+    >/dev/null && echo "ADC OK"
+
+
+Expected:
+
+ADC OK
+
+
+======================================================================
+33. FINAL FILES
+======================================================================
+
+Data:
+
+week-10/data/v1_train.jsonl
+week-10/data/v1_validation.jsonl
+week-10/data/v2_train.jsonl
+week-10/data/v2_validation.jsonl
+
+week-10/data/v1_train_gemini.jsonl
+week-10/data/v1_validation_gemini.jsonl
+week-10/data/v2_train_gemini.jsonl
+week-10/data/v2_validation_gemini.jsonl
+
+week-10/data/test.csv
+
+
+Scripts:
+
+week-10/prepare_data.py
+week-10/convert_for_gemini.py
+week-10/evaluate_models.py
+
+
+Results:
+
+week-10/results/predictions.csv
+week-10/results/evaluation_results.json
+week-10/results/comparison.csv
+
+
+Documentation:
+
+week-10/README.md
+week-10/workflow.txt
+
+
+======================================================================
+34. GIT
+======================================================================
+
+Check:
+
+git status
+
+
+Add Week 10:
+
+git add week-10/
+
+
+Commit:
+
+git commit -m "Complete Week 10 LLMOps assignment"
+
+
+Push:
+
+git push -u origin week_10
+
+
+======================================================================
+35. DEMO ORDER
+======================================================================
+
+For the video demonstration, follow this order:
+
+1. Show repository and week_10 branch.
+
+2. Show week-10 folder structure.
+
+3. Show the source IRIS dataset.
+
+4. Run prepare_data.py.
+
+5. Show V1 JSONL.
+
+6. Show V2 JSONL.
+
+7. Show test.csv and balanced classes.
+
+8. Run convert_for_gemini.py.
+
+9. Show Gemini-compatible JSONL files.
+
+10. Show GCS bucket.
+
+11. Show uploaded datasets in Cloud Storage.
+
+12. Open Vertex AI Tuning.
+
+13. Show V1 tuning configuration.
+
+14. Show V1 tuning job succeeded.
+
+15. Show V1 tuned model.
+
+16. Show V2 tuning configuration.
+
+17. Show V2 tuning job succeeded.
+
+18. Show V2 tuned model.
+
+19. Show Vertex AI endpoints.
+
+20. Show V1 endpoint and checkpoint 3.
+
+21. Show V2 endpoint and checkpoint 3.
+
+22. Run V1 endpoint prediction.
+
+23. Run V2 endpoint prediction.
+
+24. Run evaluate_models.py.
+
+25. Show predictions.csv.
+
+26. Show evaluation_results.json.
+
+27. Show comparison.csv.
+
+28. Explain final comparison.
+
+29. Explain why V1 performed better.
+
+30. Show README.md.
+
+31. Show git status.
+
+32. Commit and push.
+
+
+======================================================================
+36. SHORT DEMO EXPLANATION
+======================================================================
+
+"This week I extended the existing IRIS MLOps pipeline
+into an LLMOps workflow.
+
+I created two representations of the same IRIS dataset.
+
+V1 uses structured numerical feature prompts and V2 uses
+natural-language descriptions.
+
+Both representations use exactly the same fixed
+train, validation and test split so that the comparison
+is fair.
+
+I converted both datasets into Gemini-compatible JSONL
+format and uploaded them to Google Cloud Storage.
+
+Then I used Vertex AI supervised fine-tuning with
+Gemini 2.5 Flash Lite.
+
+Both models were trained for 3 epochs with adapter size 4.
+
+After successful tuning, I used Vertex AI endpoints to
+serve the tuned models.
+
+Finally, I evaluated both models on the same 15-example
+test set.
+
+V1 achieved 66.67% accuracy, corresponding to 10 correct
+predictions out of 15.
+
+V2 achieved 0% under the implemented evaluation protocol.
+
+Therefore, V1 was the better-performing representation
+in this experiment.
+
+I also measured output-format compliance because an LLM
+can produce the correct reasoning but still fail a
+downstream classification pipeline if the output format
+is not controlled."
+ 
+
+======================================================================
+END OF WEEK 10 WORKFLOW
+======================================================================

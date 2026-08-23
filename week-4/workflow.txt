@@ -1,0 +1,367 @@
+=========================================================
+MLOps Week 4 Workflow
+Continuous Integration for IRIS Pipeline
+=========================================================
+
+Student ID
+----------
+21F3001560
+
+Assignment Goal
+---------------
+
+Integrate Continuous Integration into the existing IRIS ML Pipeline using GitHub Actions.
+
+The workflow automatically performs:
+
+1. Pull versioned artifacts using DVC
+2. Validate dataset
+3. Validate trained model
+4. Run prediction tests
+5. Generate test report
+6. Publish report using CML
+
+=========================================================
+Problem Statement
+=========================================================
+
+In previous weeks:
+
+Week 1
+-------
+Built an IRIS Classification Pipeline.
+
+Week 2
+-------
+Integrated DVC to version datasets and trained models.
+
+Week 3
+-------
+Integrated Feast Feature Store for consistent feature serving.
+
+Problem:
+
+Every time code changes were pushed to GitHub, there was no automatic verification that:
+
+- dataset remained valid
+- model still loaded correctly
+- predictions remained correct
+- versioned artifacts were available
+
+This could introduce bugs into the project.
+
+Therefore Week 4 introduces Continuous Integration.
+
+=========================================================
+Approach
+=========================================================
+
+Step 1
+
+Created a Week-4 folder
+
+week-4/
+
+containing
+
+tests/
+reports/
+requirements.txt
+
+---------------------------------------------------------
+
+Step 2
+
+Created Data Validation Tests
+
+tests/test_data_validation.py
+
+Tests include
+
+✔ Dataset exists
+✔ Dataset not empty
+✔ Required columns
+✔ Missing values
+✔ Numeric columns
+✔ Feature ranges
+
+---------------------------------------------------------
+
+Step 3
+
+Created Model Tests
+
+tests/test_model.py
+
+Checks
+
+✔ Model exists
+✔ Label Encoder exists
+✔ Model loads
+✔ Encoder loads
+✔ predict() exists
+
+---------------------------------------------------------
+
+Step 4
+
+Created Prediction Test
+
+tests/test_prediction.py
+
+Loads
+
+iris_model.pkl
+
+Runs prediction
+
+Verifies expected prediction.
+
+---------------------------------------------------------
+
+Step 5
+
+Installed dependencies
+
+requirements.txt
+
+Contains
+
+pytest
+numpy
+pandas
+scikit-learn
+joblib
+dvc
+dvc-gs
+feast
+
+---------------------------------------------------------
+
+Step 6
+
+Created GitHub Actions Workflow
+
+.github/workflows/ci.yml
+
+Pipeline
+
+Checkout Repository
+
+↓
+
+Setup Python
+
+↓
+
+Install Dependencies
+
+↓
+
+Authenticate to Google Cloud
+
+↓
+
+Setup gcloud
+
+↓
+
+Run DVC Pull
+
+↓
+
+Run Pytest
+
+↓
+
+Generate Report
+
+↓
+
+Publish CML Comment
+
+---------------------------------------------------------
+
+Step 7
+
+Configured GitHub Secrets
+
+Repository
+
+↓
+
+Settings
+
+↓
+
+Secrets
+
+↓
+
+Actions
+
+Created
+
+GCP_SA_KEY
+
+Stored Service Account JSON.
+
+---------------------------------------------------------
+
+Step 8
+
+Configured Workflow Permissions
+
+Repository
+
+↓
+
+Settings
+
+↓
+
+Actions
+
+↓
+
+General
+
+Selected
+
+Read and Write Permissions
+
+Enabled
+
+Allow GitHub Actions to create Pull Requests
+
+---------------------------------------------------------
+
+Step 9
+
+Created Pull Request
+
+week_4
+
+↓
+
+main
+
+GitHub automatically executed CI.
+
+---------------------------------------------------------
+
+Step 10
+
+Verified
+
+✔ Authentication Successful
+
+✔ DVC Pull Successful
+
+✔ 12 Tests Passed
+
+✔ Report Generated
+
+✔ CML Report Posted
+
+=========================================================
+Commands Used
+=========================================================
+
+Clone Repository
+
+git clone <repository>
+
+---------------------------------------------------------
+
+Create Week 4 Branch
+
+git checkout -b week_4
+
+---------------------------------------------------------
+
+Run Tests
+
+cd week-4
+
+python -m pytest tests -v
+
+---------------------------------------------------------
+
+Commit Changes
+
+git add .
+
+git commit -m "Add Week 4 CI Pipeline"
+
+---------------------------------------------------------
+
+Push Branch
+
+git push origin week_4
+
+---------------------------------------------------------
+
+Create Pull Request
+
+week_4
+
+↓
+
+main
+
+---------------------------------------------------------
+
+Merge Pull Request
+
+Merge
+
+↓
+
+Confirm Merge
+
+=========================================================
+Results
+=========================================================
+
+GitHub Actions
+
+PASSED
+
+DVC Pull
+
+PASSED
+
+Authentication
+
+PASSED
+
+Pytest
+
+12 / 12 Passed
+
+CML
+
+Report Published
+
+=========================================================
+Learning Outcomes
+=========================================================
+
+✔ Learned Continuous Integration
+
+✔ Learned GitHub Actions
+
+✔ Learned DVC in CI
+
+✔ Learned automated testing
+
+✔ Learned CML integration
+
+✔ Learned Pull Request based validation
+
+=========================================================
+Final Outcome
+=========================================================
+
+Successfully implemented an automated CI pipeline that validates the IRIS ML project on every Push and Pull Request using GitHub Actions, DVC, Pytest, and CML.

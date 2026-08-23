@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: iris-api
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: iris-api
+
+  template:
+    metadata:
+      labels:
+        app: iris-api
+
+    spec:
+      containers:
+        - name: iris-api
+          image: us-central1-docker.pkg.dev/project-a74bda7f-3a9e-4ff2-a23/iris-repo/iris-api:latest
+          imagePullPolicy: Always
+
+          ports:
+            - containerPort: 8200
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+
+            limits:
+              cpu: "500m"
+              memory: "512Mi"

@@ -1,0 +1,644 @@
+# WEEK 9 — EXPLAINABILITY, FAIRNESS, AND DRIFT IN THE IRIS PIPELINE
+
+Project:
+21f3001560_MLOPS_WEEKLY_ASSIGNMENT
+
+Branch:
+week_9
+
+Objective:
+Extend the IRIS ML pipeline with responsible ML capabilities including
+fairness assessment, explainability, data drift detection, and governance.
+
+=================================================================
+
+1. ENVIRONMENT SETUP
+   =================================================================
+
+Repository:
+~/21f3001560_MLOPS_WEEKLY_ASSIGNMENT
+
+Activate the existing virtual environment:
+
+source .env/bin/activate
+
+Verify Python:
+
+python --version
+
+Required packages:
+
+pandas
+numpy
+scikit-learn
+mlflow
+joblib
+matplotlib
+scipy
+fairlearn
+shap
+
+Additional packages installed for Week 9:
+
+pip install fairlearn shap
+
+=================================================================
+2. GIT BRANCH
+=============
+
+Week 9 was implemented on a new Git branch:
+
+git checkout -b week_9
+
+Verify:
+
+git branch
+
+=================================================================
+3. PROJECT STRUCTURE
+====================
+
+week-9/
+|
+|-- data/
+|   |-- iris_clean.csv
+|   |-- iris_with_location.csv
+|   `-- iris_production.csv
+| |-- plots/ |   |-- shap_setosa.png |   |-- shap_versicolor.png |   |-- shap_virginica.png |   |-- drift_sepal_length.png |   |-- drift_sepal_width.png |   |-- drift_petal_length.png |   `-- drift_petal_width.png
+|
+|-- prepare_data.py
+|-- fairness_analysis.py
+|-- explainability.py
+|-- drift_detection.py
+|-- model_card.md
+|-- requirements.txt
+|-- README.md
+`-- workflow.txt
+
+=================================================================
+4. TASK 1 — INTRODUCE LOCATION ATTRIBUTE
+========================================
+
+Source dataset:
+
+week-8/data/iris_clean.csv
+
+The clean IRIS dataset was copied into Week 9:
+
+cp week-8/data/iris_clean.csv week-9/data/iris_clean.csv
+
+The dataset originally contained:
+
+150 rows
+5 columns
+
+The four model features are:
+
+sepal_length
+sepal_width
+petal_length
+petal_width
+
+Target:
+
+species
+
+A sensitive attribute called "location" was added.
+
+Location values are randomly assigned as:
+
+0
+1
+
+A fixed random seed of 42 was used for reproducibility.
+
+Run:
+
+python prepare_data.py
+
+Output:
+
+data/iris_with_location.csv
+
+Final dataset:
+
+150 rows
+6 columns
+
+Final columns:
+
+sepal_length
+sepal_width
+petal_length
+petal_width
+species
+location
+
+Observed location distribution:
+
+location 0 = 71 samples
+location 1 = 79 samples
+
+=================================================================
+5. TASK 1 — IMPORTANT MODEL DESIGN
+==================================
+
+The sensitive location attribute is NOT used for model training.
+
+Training features:
+
+sepal_length
+sepal_width
+petal_length
+petal_width
+
+Sensitive attribute:
+
+location
+
+The model therefore learns only from the original four IRIS
+features.
+
+Location is used separately for fairness auditing.
+
+=================================================================
+6. TASK 2 — FAIRNESS ANALYSIS
+=============================
+
+Fairness analysis was implemented using Fairlearn's MetricFrame.
+
+File:
+
+fairness_analysis.py
+
+Model:
+
+RandomForestClassifier(
+n_estimators=100,
+max_depth=5,
+random_state=42
+)
+
+Target labels were encoded using LabelEncoder.
+
+The dataset was divided into:
+
+80% training
+20% testing
+
+The sensitive attribute "location" was kept separate from the
+training features.
+
+Run:
+
+python fairness_analysis.py
+
+=================================================================
+7. TASK 2 — OVERALL MODEL PERFORMANCE
+=====================================
+
+Observed test-set performance:
+
+Accuracy  = 0.9333
+Precision = 0.9333
+Recall    = 0.9333
+
+=================================================================
+8. TASK 2 — FAIRLEARN METRICFRAME RESULTS
+=========================================
+
+Observed metrics by location:
+
+```
+         accuracy    precision    recall
+```
+
+location 0    0.846154    0.846154    0.846154
+location 1    1.000000    1.000000    1.000000
+
+Difference between best and worst groups:
+
+Accuracy difference  = 0.153846
+Precision difference = 0.153846
+Recall difference    = 0.153846
+
+Test-set group distribution:
+
+location 0 = 13 samples
+location 1 = 17 samples
+
+Interpretation:
+
+The location attribute was randomly assigned and was not used for
+training. Therefore, the observed subgroup difference should not
+automatically be interpreted as systematic discrimination.
+
+The test groups are small, so sampling variation can produce
+noticeable differences.
+
+Fairlearn is used to expose such subgroup performance differences.
+
+=================================================================
+9. TASK 3 — SHAP EXPLAINABILITY
+===============================
+
+File:
+
+explainability.py
+
+SHAP was used to explain the Random Forest classifier.
+
+A SHAP TreeExplainer was created for the trained Random Forest.
+
+The full dataset was used for SHAP analysis.
+
+Dataset:
+
+150 samples
+
+Model features:
+
+4
+
+Classes:
+
+3
+
+Run:
+
+python explainability.py
+
+=================================================================
+10. TASK 3 — SHAP OUTPUT
+========================
+
+SHAP values shape:
+
+(150, 4, 3)
+
+Meaning:
+
+150 = samples
+4   = model features
+3   = IRIS classes
+
+Summary plots generated for:
+
+Setosa
+Versicolor
+Virginica
+
+Generated files:
+
+plots/shap_setosa.png
+plots/shap_versicolor.png
+plots/shap_virginica.png
+
+=================================================================
+11. TASK 3 — VIRGINICA SHAP FEATURE IMPORTANCE
+==============================================
+
+Mean absolute SHAP values for Virginica:
+
+petal_length = 0.201497
+petal_width  = 0.193650
+sepal_length = 0.037120
+sepal_width  = 0.007265
+
+Therefore, the two strongest features influencing the model's
+Virginica predictions are:
+
+1. petal_length
+2. petal_width
+
+Interpretation:
+
+Positive SHAP values push the prediction toward Virginica.
+
+Negative SHAP values push the prediction away from Virginica.
+
+A red point represents a high feature value.
+
+A blue point represents a low feature value.
+
+Each point represents one sample.
+
+SHAP explains model behavior and should not be interpreted as
+evidence of causality.
+
+=================================================================
+12. TASK 4 — DATA DRIFT SIMULATION
+==================================
+
+File:
+
+drift_detection.py
+
+The clean IRIS dataset was used as the reference/training dataset.
+
+A simulated production dataset was created from the reference data.
+
+The following controlled shifts were introduced:
+
+petal_length = original value + 1.0
+
+petal_width = original value + 0.5
+
+The following features were not changed:
+
+sepal_length
+sepal_width
+
+Run:
+
+python drift_detection.py
+
+Output:
+
+data/iris_production.csv
+
+=================================================================
+13. TASK 4 — FEATURE DISTRIBUTION COMPARISON
+============================================
+
+Reference mean vs production mean:
+
+sepal_length:
+Reference = 5.843333
+Production = 5.843333
+Mean shift = 0.0
+
+sepal_width:
+Reference = 3.057333
+Production = 3.057333
+Mean shift = 0.0
+
+petal_length:
+Reference = 3.758000
+Production = 4.758000
+Mean shift = +1.0
+
+petal_width:
+Reference = 1.199333
+Production = 1.699333
+Mean shift = +0.5
+
+=================================================================
+14. TASK 4 — KOLMOGOROV-SMIRNOV TEST
+====================================
+
+The Kolmogorov-Smirnov two-sample test was used to compare the
+reference and production feature distributions.
+
+Significance threshold:
+
+p < 0.05
+
+Results:
+
+sepal_length
+KS statistic = 0.000000
+p-value      = 1.000000
+Drift        = No
+
+sepal_width
+KS statistic = 0.000000
+p-value      = 1.000000
+Drift        = No
+
+petal_length
+KS statistic = 0.333333
+p-value      = 8.87e-08
+Drift        = Yes
+
+petal_width
+KS statistic = 0.326667
+p-value      = 1.76e-07
+Drift        = Yes
+
+=================================================================
+15. TASK 4 — DRIFT PLOTS
+========================
+
+Generated distribution comparison plots:
+
+plots/drift_sepal_length.png
+plots/drift_sepal_width.png
+plots/drift_petal_length.png
+plots/drift_petal_width.png
+
+=================================================================
+16. DATA DRIFT INTERPRETATION
+=============================
+
+Data drift occurs when the statistical distribution of model inputs
+changes over time.
+
+Formally:
+
+P(X) changes
+
+In this assignment:
+
+petal_length distribution changed.
+
+petal_width distribution changed.
+
+Therefore, significant data drift was detected for those features.
+
+Data drift does not automatically prove that model accuracy has
+decreased.
+
+Instead, it is a monitoring signal that should trigger further
+model evaluation and potentially retraining.
+
+=================================================================
+17. DATA DRIFT VS CONCEPT DRIFT
+===============================
+
+DATA DRIFT:
+
+P(X) changes
+
+Example:
+
+The distribution of petal_length in production is different from
+the training distribution.
+
+CONCEPT DRIFT:
+
+P(Y | X) changes
+
+Example:
+
+The relationship between IRIS features and species changes over
+time.
+
+The current assignment demonstrates DATA DRIFT.
+
+Concept drift requires monitoring the relationship between model
+inputs and ground-truth target labels over time.
+
+=================================================================
+18. TASK 5 — MODEL GOVERNANCE
+=============================
+
+A model card was created to document the IRIS classifier.
+
+File:
+
+model_card.md
+
+The model card contains:
+
+* Model overview
+* Intended use
+* Training data
+* Features
+* Model details
+* Overall performance
+* Fairness results
+* SHAP explainability
+* Drift monitoring
+* Limitations
+* Fairness considerations
+* Governance considerations
+
+=================================================================
+19. RESPONSIBLE ML PIPELINE
+===========================
+
+The final Week 9 workflow is:
+
+Clean IRIS Dataset
+|
+v
+Add Sensitive Location Attribute
+|
++----------------------------+
+|                            |
+v                            v
+Train Model                    Fairness Audit
+|                            |
+|                       Fairlearn
+|                       MetricFrame
+|
+v
+Model Predictions
+|
+v
+SHAP Explainability
+|
+v
+Feature Contributions
+|
+|
+Production Dataset
+|
+v
+Distribution Comparison
+|
+v
+KS Drift Detection
+|
+v
+Monitoring Signal
+|
+v
+Model Governance
+|
+v
+Model Card
+
+=================================================================
+20. COMPLETE EXECUTION ORDER
+============================
+
+1. Activate environment:
+
+source .env/bin/activate
+
+2. Generate location-augmented dataset:
+
+python prepare_data.py
+
+3. Run fairness analysis:
+
+python fairness_analysis.py
+
+4. Generate SHAP explanations:
+
+python explainability.py
+
+5. Detect data drift:
+
+python drift_detection.py
+
+6. Review generated plots:
+
+ls -lh plots/
+
+7. Review generated data:
+
+ls -lh data/
+
+=================================================================
+21. FINAL OUTPUTS
+=================
+
+DATA:
+
+data/iris_clean.csv
+data/iris_with_location.csv
+data/iris_production.csv
+
+PYTHON SCRIPTS:
+
+prepare_data.py
+fairness_analysis.py
+explainability.py
+drift_detection.py
+
+SHAP PLOTS:
+
+plots/shap_setosa.png
+plots/shap_versicolor.png
+plots/shap_virginica.png
+
+DRIFT PLOTS:
+
+plots/drift_sepal_length.png
+plots/drift_sepal_width.png
+plots/drift_petal_length.png
+plots/drift_petal_width.png
+
+DOCUMENTATION:
+
+README.md
+model_card.md
+workflow.txt
+
+=================================================================
+22. FINAL CHECK
+===============
+
+Before submission, verify:
+
+* Week 9 branch is week_9.
+* Location attribute is present.
+* Location is not used as a model feature.
+* Fairlearn MetricFrame output is available.
+* Accuracy, precision, and recall are reported by location.
+* SHAP plots for all three classes are generated.
+* Virginica SHAP analysis is available.
+* Production data is generated.
+* KS drift test results are available.
+* Drift plots are generated.
+* Model card is included.
+* README is included.
+* All work has been executed in GCP.
+* GitHub repository contains the Week 9 implementation.
+
+=================================================================
+END OF WEEK 9 WORKFLOW
+======================
